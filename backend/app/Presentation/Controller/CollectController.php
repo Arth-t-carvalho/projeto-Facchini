@@ -45,8 +45,11 @@ class CollectController
 
     public function sendReport(): void
     {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $email = $data['email'] ?? 'arthur.t.carvalho@aluno.senai.br'; // Fallback se não enviado
+
         try {
-            $this->reportService->sendReport();
+            $this->reportService->sendReport($email);
             $this->jsonResponse(['success' => 'Relatório enviado com sucesso.']);
         } catch (\Exception $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 500);

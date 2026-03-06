@@ -177,7 +177,7 @@ async function addCode(code) {
             showToast(result.error || 'Erro ao registrar', 'error');
             if (input) input.value = '';
         }
-        if (input) input.focus();
+        // if (input) input.focus();
     } catch (error) {
         console.error('Erro ao registrar item:', error);
         showToast('Erro de conexão com o servidor', 'error');
@@ -379,32 +379,34 @@ if (btnConfirmClear) {
 }
 
 // --- Dados das Filiais Fachini ---
+// ABAIXO VOCÊ PODE ALTERAR O E-MAIL DE CADA FILIAL. 
+// Certifique-se de manter o formato { name: '...', location: '...', state: '...', email: '...' }
 const branches = [
-    { name: 'Votuporanga – SP (Sede)', location: 'Votuporanga, SP', state: 'SP' },
-    { name: 'São José do Rio Preto – SP', location: 'São José do Rio Preto, SP', state: 'SP' },
-    { name: 'Mirassol – SP', location: 'Mirassol, SP', state: 'SP' },
-    { name: 'Cosmorama – SP', location: 'Cosmorama, SP', state: 'SP' },
-    { name: 'Coroados – SP', location: 'Coroados, SP', state: 'SP' },
-    { name: 'Ribeirão Preto – SP', location: 'Ribeirão Preto, SP', state: 'SP' },
-    { name: 'Guararema – SP', location: 'Guararema, SP', state: 'SP' },
-    { name: 'Guarulhos – SP', location: 'Guarulhos, SP', state: 'SP' },
-    { name: 'Anápolis – GO', location: 'Anápolis, GO', state: 'GO' },
-    { name: 'Rio Verde – GO', location: 'Rio Verde, GO', state: 'GO' },
-    { name: 'Cuiabá – MT', location: 'Cuiabá, MT', state: 'MT' },
-    { name: 'Rondonópolis – MT', location: 'Rondonópolis, MT', state: 'MT' },
-    { name: 'Campo Grande – MS', location: 'Campo Grande, MS', state: 'MS' },
-    { name: 'Ribas do Rio Pardo – MS', location: 'Ribas do Rio Pardo, MS', state: 'MS' },
-    { name: 'Chapecó – SC', location: 'Chapecó, SC', state: 'SC' },
-    { name: 'Penha – SC', location: 'Penha, SC', state: 'SC' },
-    { name: 'Içara – SC', location: 'Içara, SC', state: 'SC' },
-    { name: 'São José dos Pinhais – PR', location: 'São José dos Pinhais, PR', state: 'PR' },
-    { name: 'Cambé – PR', location: 'Cambé, PR', state: 'PR' },
-    { name: 'Nova Santa Rita – RS', location: 'Nova Santa Rita, RS', state: 'RS' },
-    { name: 'Imperatriz – MA', location: 'Imperatriz, MA', state: 'MA' },
-    { name: 'São José de Mipibu – RN', location: 'São José de Mipibu, RN', state: 'RN' },
-    { name: 'Cabo de Santo Agostinho – PE', location: 'Cabo de Santo Agostinho, PE', state: 'PE' },
-    { name: 'Luís Eduardo Magalhães – BA', location: 'Luís Eduardo Magalhães, BA', state: 'BA' },
-    { name: 'Palmas – TO', location: 'Palmas, TO', state: 'TO' }
+    { name: 'Votuporanga – SP (Sede)', location: 'Votuporanga, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'São José do Rio Preto – SP', location: 'São José do Rio Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Mirassol – SP', location: 'Mirassol, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Cosmorama – SP', location: 'Cosmorama, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Coroados – SP', location: 'Coroados, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Ribeirão Preto – SP', location: 'Ribeirão Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Guararema – SP', location: 'Guararema, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Guarulhos – SP', location: 'Guarulhos, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Anápolis – GO', location: 'Anápolis, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Rio Verde – GO', location: 'Rio Verde, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Cuiabá – MT', location: 'Cuiabá, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Rondonópolis – MT', location: 'Rondonópolis, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Campo Grande – MS', location: 'Campo Grande, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Ribas do Rio Pardo – MS', location: 'Ribas do Rio Pardo, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Chapecó – SC', location: 'Chapecó, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Penha – SC', location: 'Penha, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Içara – SC', location: 'Içara, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'São José dos Pinhais – PR', location: 'São José dos Pinhais, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Cambé – PR', location: 'Cambé, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Nova Santa Rita – RS', location: 'Nova Santa Rita, RS', state: 'RS', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Imperatriz – MA', location: 'Imperatriz, MA', state: 'MA', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'São José de Mipibu – RN', location: 'São José de Mipibu, RN', state: 'RN', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Cabo de Santo Agostinho – PE', location: 'Cabo de Santo Agostinho, PE', state: 'PE', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Luís Eduardo Magalhães – BA', location: 'Luís Eduardo Magalhães, BA', state: 'BA', email: 'arthur.t.carvalho@aluno.senai.br' },
+    { name: 'Palmas – TO', location: 'Palmas, TO', state: 'TO', email: 'arthur.t.carvalho@aluno.senai.br' }
 ];
 
 // Elementos dos Modais de Destino
@@ -438,8 +440,13 @@ window.filterByState = (state) => {
     renderBranchList();
 };
 
+let selectedBranchEmail = null;
+
 window.selectBranch = (branchName) => {
+    const branch = branches.find(b => b.name === branchName);
     destinationInput.value = branchName;
+    selectedBranchEmail = branch ? branch.email : null;
+
     btnConfirmSend.disabled = false;
     btnConfirmSend.style.opacity = '1';
     branchSelectionModal.style.display = 'none';
@@ -549,7 +556,10 @@ if (btnConfirmSend) {
                 const response = await fetch(`${API_BASE_URL}/report`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ destination: dest })
+                    body: JSON.stringify({
+                        destination: dest,
+                        email: selectedBranchEmail
+                    })
                 });
 
                 if (response.ok) {
@@ -572,7 +582,7 @@ if (btnConfirmSend) {
 
 // Inicialização
 loadItems();
-if (input) input.focus();
+// if (input) input.focus();
 
 // Lógica da Tela de Splash com Carrossel
 const btnEnterApp = document.getElementById('btnEnterApp');
@@ -713,9 +723,9 @@ if (btnEnterApp && splashScreen && appContainer) {
         appContainer.style.opacity = '1';
         // Limpa o parâmetro da URL sem recarregar
         window.history.replaceState({}, '', window.location.pathname);
-        setTimeout(() => {
-            if (input) input.focus();
-        }, 100);
+        /* setTimeout(() => {
+                    if (input) input.focus();
+                }, 100); */
     } else {
         // Fluxo normal com animação
         let progress = 0;
@@ -733,9 +743,9 @@ if (btnEnterApp && splashScreen && appContainer) {
             stopAutoRotate();
             splashScreen.classList.add('fade-out');
             appContainer.classList.add('reveal');
-            setTimeout(() => {
-                if (input) input.focus();
-            }, 500);
+            /* setTimeout(() => {
+                            if (input) input.focus();
+                        }, 500); */
         });
     }
 }

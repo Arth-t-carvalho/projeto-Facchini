@@ -39,13 +39,22 @@ body {
 #splashScreen {
     position: fixed;
     inset: 0;
-    background-color: var(--fachini-blue);
+    /* Fundo para Desktop/Tablet (Landscape) */
+    background: linear-gradient(150deg, #a30b12 0%, #a30b12 25%, #70080c 25%, #70080c 75%, #a30b12 75%, #a30b12 100%);
+    background-size: cover;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 24px;
     z-index: 99999;
+}
+
+/* Ajuste para Celulares (Portrait) */
+@media (max-width: 480px) and (orientation: portrait) {
+    #splashScreen {
+        background: linear-gradient(165deg, #a30b12 0%, #a30b12 20%, #70080c 20%, #70080c 80%, #a30b12 80%, #a30b12 100%);
+    }
 }
 
 #splashScreen.fade-out {
@@ -55,12 +64,29 @@ body {
 
 .splash-logo {
     color: var(--white);
-    font-size: clamp(32px, 8vw, 48px);
-    letter-spacing: 4px;
-    font-weight: 700;
+    font-size: clamp(42px, 11vw, 68px);
+    /* Aumentado */
+    letter-spacing: 5px;
+    /* Levemente mais espaçado para compensar o peso */
+    font-weight: 900;
+    /* Extra-Bold */
     opacity: 0;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.7);
+    /* Sombra mais visível */
     animation: fadeInLogo 0.5s ease-out forwards;
+}
+
+.splash-watermark {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: clamp(9px, 2.5vw, 11px);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 1000;
+    text-transform: uppercase;
 }
 
 .progress-bar-container {

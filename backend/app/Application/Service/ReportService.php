@@ -16,7 +16,7 @@ class ReportService
         $this->emailSender = $emailSender;
     }
 
-    public function sendReport(): void
+    public function sendReport(string $email): void
     {
         $items = $this->repository->findAll();
 
@@ -34,9 +34,10 @@ class ReportService
         foreach ($items as $item) {
             $body .= $item->getCode() . "\t\t" . $item->getTimestamp()->format('d/m/Y H:i:s') . "\n";
         }
-// aqui e a parte que vc escolhe o gmail do caba para mandar 
+
+        // ABAIXO O SISTEMA ENVIA PARA O GMAIL VINCULADO À FILIAL SELECIONADA
         $this->emailSender->send(
-            'arthur.t.carvalho@aluno.senai.br',
+            $email,
             'Coleta de Dados - ' . date('d/m/Y'),
             $body
         );

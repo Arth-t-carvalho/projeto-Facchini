@@ -1,8 +1,9 @@
-// Configuração da API
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_BASE_URL = isLocal
-    ? window.location.href.substring(0, window.location.href.lastIndexOf('/frontend')) + '/backend/public/index.php'
-    : 'https://seu-dominio.com.br/backend/public/index.php';
+// Configuração da API (funciona em localhost, IP de rede local e produção)
+const currentUrl = window.location.href;
+const frontendIndex = currentUrl.indexOf('/frontend');
+const API_BASE_URL = frontendIndex !== -1
+    ? currentUrl.substring(0, frontendIndex) + '/backend/public/index.php'
+    : window.location.origin + '/qrcode/qrcode.php/backend/public/index.php';
 
 // Inicializa ícones
 lucide.createIcons();

@@ -18,13 +18,13 @@ class ReportService
 
     public function sendReport(string $email): void
     {
-        $items = $this->repository->findAll();
+        $items = $this->repository->findByStatus('pending');
 
         if (empty($items)) {
             throw new \Exception("Nenhum item recolhido para enviar.");
         }
 
-        $body = "Relatório de Coleta de Dados - Fachini Logística\n\n";
+        $body = "Relatório de Coleta de Dados - Facchini Logística\n\n";
         $body .= "Data: " . date('d/m/Y H:i:s') . "\n";
         $body .= "Total de volumes: " . count($items) . "\n\n";
         $body .= "===================================\n";
@@ -42,6 +42,6 @@ class ReportService
             $body
         );
 
-        $this->repository->deleteAll();
+        $this->repository->archiveAll();
     }
 }

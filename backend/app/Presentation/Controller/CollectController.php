@@ -24,7 +24,13 @@ class CollectController
 
     public function listItems(): void
     {
-        $items = $this->repository->findAll();
+        $items = $this->repository->findByStatus('pending');
+        $this->jsonResponse(array_map(fn($item) => $item->toArray(), $items));
+    }
+
+    public function listHistory(): void
+    {
+        $items = $this->repository->findAll(); // Retorna tudo para o histórico
         $this->jsonResponse(array_map(fn($item) => $item->toArray(), $items));
     }
 
@@ -58,8 +64,8 @@ class CollectController
 
     public function clearAll(): void
     {
-        $this->repository->deleteAll();
-        $this->jsonResponse(['success' => 'Todos os itens foram removidos.']);
+        $this->repository->archiveAll();
+        $this->jsonResponse(['success' => 'Todos os itens foram arquivados.']);
     }
 
     public function deleteItem(int $id): void

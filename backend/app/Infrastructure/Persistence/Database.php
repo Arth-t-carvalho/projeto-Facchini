@@ -48,8 +48,30 @@ class Database
                     }
                 }
             }
+
+            // Migração: garante que colunas necessárias existam em collected_items
+            self::ensureColumn($dbname, 'collected_items', 'scan_count', 'INT DEFAULT 1');
+            self::ensureColumn($dbname, 'collected_items', 'status', "VARCHAR(20) DEFAULT 'pending'");
         }
 
         return self::$connection;
+    }
+
+    /**
+     * Verifica se uma coluna existe na tabela e a adiciona caso não exista.
+     */
+    private static function ensureColumn(string $dbname, string $table, string $column, string $definition): void
+    {
+        $check = self::$connection->query(
+            "SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS 
+             WHERE TABLE_SCHEMA = '$dbname' AND TABLE_NAME = '$table' AND COLUMN_NAME = '$column'"
+        );
+
+        if ($check) {
+            $row = $check->fetch_assoc();
+            if ((int) $row['cnt'] === 0) {
+                self::$connection->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+            }
+        }
     }
 }

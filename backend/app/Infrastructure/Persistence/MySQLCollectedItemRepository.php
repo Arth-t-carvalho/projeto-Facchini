@@ -89,7 +89,8 @@ class MySQLCollectedItemRepository implements CollectedItemRepository
 
     public function deleteById(int $id): void
     {
-        $sql = "DELETE FROM collected_items WHERE id = ?";
+        // Soft-delete: arquiva o item em vez de apagar, mantendo integridade dos dados
+        $sql = "UPDATE collected_items SET status = 'archived' WHERE id = ?";
         $stmt = $this->mysqli->prepare($sql);
         $stmt->bind_param("i", $id);
         $stmt->execute();

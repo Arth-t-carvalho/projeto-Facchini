@@ -19,13 +19,23 @@ class MySQLUserRepository implements UserRepository
         $sql = "INSERT INTO users (username, password, name, created_at) VALUES (?, ?, ?, ?)";
         $stmt = $this->mysqli->prepare($sql);
 
+        if (!$stmt) {
+            throw new \Exception("Erro ao preparar query: " . $this->mysqli->error);
+        }
+
         $username = $user->getUsername();
         $password = $user->getPassword();
         $name = $user->getName();
         $createdAt = $user->getCreatedAt()->format('Y-m-d H:i:s');
 
         $stmt->bind_param("ssss", $username, $password, $name, $createdAt);
-        $stmt->execute();
+
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new \Exception("Erro ao salvar usuário: " . $error);
+        }
+
         $stmt->close();
     }
 

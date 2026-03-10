@@ -11,14 +11,15 @@ class Database
         if (self::$connection === null) {
             $host = $_ENV['DB_HOST'] ?? 'localhost';
             $user = $_ENV['DB_USER'] ?? 'root';
-            $pass = $_ENV['DB_PASS'] ?? 'mysql'; // Para XAMPP normalmente vazio ou 'mysql'
+            $pass = $_ENV['DB_PASS'] ?? '';
             $dbname = $_ENV['DB_NAME'] ?? 'projeto_facchini';
+            $port = $_ENV['DB_PORT'] ?? '3308';
 
-            // Primeiro conecta sem banco de dados para poder criá-lo
-            self::$connection = new \mysqli($host, $user, $pass);
+            // Tenta conectar com a senha configurada
+            self::$connection = @new \mysqli($host, $user, $pass, $dbname, $port);
 
             if (self::$connection->connect_error) {
-                // Se falhar a senha 'mysql', tenta com senha vazia (padrão XAMPP Windows puro)
+                // Fallback: tenta com senha vazia (padrão XAMPP Windows)
                 self::$connection = @new \mysqli($host, $user, '');
                 if (self::$connection->connect_error) {
                     throw new \Exception("Conexão falhou: " . self::$connection->connect_error);
@@ -27,25 +28,28 @@ class Database
 
             self::$connection->set_charset("utf8mb4");
 
-            // Cria o banco de dados automaticamente se não existir usando o nome padrão
+            // Cria o banco de dados automaticamente se não existir
             self::$connection->query("CREATE DATABASE IF NOT EXISTS `$dbname` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             self::$connection->select_db($dbname);
 
-            // Usa o arquivo database.sql de exemplo para criar as tabelas automaticamente
+            // Executa o schema SQL para criar as tabelas (se o arquivo existir)
             $sqlFile = __DIR__ . '/../../../../database/database.sql';
             if (file_exists($sqlFile)) {
                 $schema = file_get_contents($sqlFile);
-                if (self::$connection->multi_query($schema)) {
-                    do {
-                        if ($result = self::$connection->store_result()) {
-                            $result->free();
-                        }
-                    } while (self::$connection->more_results() && self::$connection->next_result());
+
+                // Remove comentários SQL (-- ...) para evitar problemas
+                $schema = preg_replace('/--.*$/m', '', $schema);
+
+                // Separa as queries por ponto e vírgula e executa uma a uma
+                $queries = array_filter(array_map('trim', explode(';', $schema)));
+                foreach ($queries as $query) {
+                    if (!empty($query)) {
+                        self::$connection->query($query);
+                    }
                 }
             }
         }
 
         return self::$connection;
     }
-
 }

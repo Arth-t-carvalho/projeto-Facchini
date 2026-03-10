@@ -19,13 +19,23 @@ class MySQLCollectedItemRepository implements CollectedItemRepository
         $sql = "INSERT INTO collected_items (code, timestamp, scan_count, status) VALUES (?, ?, ?, ?)";
         $stmt = $this->mysqli->prepare($sql);
 
+        if (!$stmt) {
+            throw new \Exception("Erro ao preparar query: " . $this->mysqli->error);
+        }
+
         $code = $item->getCode();
         $timestamp = $item->getTimestamp()->format('Y-m-d H:i:s');
         $scanCount = $item->getScanCount();
         $status = $item->getStatus();
 
         $stmt->bind_param("ssis", $code, $timestamp, $scanCount, $status);
-        $stmt->execute();
+
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new \Exception("Erro ao salvar item: " . $error);
+        }
+
         $stmt->close();
     }
 

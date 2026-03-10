@@ -8,13 +8,15 @@ class CollectedItem
     private string $code;
     private \DateTimeImmutable $timestamp;
     private int $scanCount;
+    private string $status;
 
-    public function __construct(string $code, ?int $id = null, ?\DateTimeImmutable $timestamp = null, int $scanCount = 1)
+    public function __construct(string $code, ?int $id = null, ?\DateTimeImmutable $timestamp = null, int $scanCount = 1, string $status = 'pending')
     {
         $this->id = $id;
         $this->code = $code;
         $this->timestamp = $timestamp ?? new \DateTimeImmutable();
         $this->scanCount = $scanCount;
+        $this->status = $status;
     }
 
     public function getId(): ?int
@@ -37,6 +39,11 @@ class CollectedItem
         return $this->scanCount;
     }
 
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
     public function toArray(): array
     {
         return [
@@ -44,6 +51,7 @@ class CollectedItem
             'code' => $this->code,
             'timestamp' => $this->timestamp->format('Y-m-d H:i:s'),
             'scan_count' => $this->scanCount,
+            'status' => $this->status,
         ];
     }
 }

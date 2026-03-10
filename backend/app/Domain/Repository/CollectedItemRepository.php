@@ -8,7 +8,8 @@ interface CollectedItemRepository
 {
     public function save(CollectedItem $item): void;
     public function findAll(): array;
-    public function deleteAll(): void;
+    public function findByStatus(string $status): array;
+    public function archiveAll(): void;
     public function deleteById(int $id): void;
     public function existsByCode(string $code): bool;
     public function incrementScanCount(string $code): void;

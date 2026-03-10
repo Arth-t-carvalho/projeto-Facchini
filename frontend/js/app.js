@@ -3,10 +3,31 @@ const currentUrl = window.location.href;
 const frontendIndex = currentUrl.indexOf('/frontend');
 const API_BASE_URL = frontendIndex !== -1
     ? currentUrl.substring(0, frontendIndex) + '/backend/public/index.php'
-    : window.location.origin + '/qrcode/qrcode.php/backend/public/index.php';
+    : window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/backend/public/index.php';
 
 // Inicializa ícones
 lucide.createIcons();
+
+// Função para verificar autenticação
+async function checkAuth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/me`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (!data.authenticated) {
+            window.location.href = 'login.html';
+        } else if (document.getElementById('userNameDisplay')) {
+            document.getElementById('userNameDisplay').textContent = data.user.name;
+        }
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+    }
+}
+
+// Executa verificação imediatamente
+checkAuth();
 
 // Elementos do DOM
 const form = document.getElementById('scanForm');
@@ -59,7 +80,12 @@ function formatDateTime(dbDate) {
 // Função para carregar itens da API
 async function loadItems() {
     try {
-        const response = await fetch(`${API_BASE_URL}/items`);
+        const isHistoryPage = window.location.pathname.includes('historico.html');
+        const endpoint = isHistoryPage ? `${API_BASE_URL}/history` : `${API_BASE_URL}/items`;
+
+        const response = await fetch(endpoint, {
+            credentials: 'include'
+        });
         const items = await response.json();
         renderList(items);
     } catch (error) {
@@ -127,7 +153,8 @@ if (btnConfirmDelete) {
 
         try {
             const response = await fetch(`${API_BASE_URL}/items/${itemToDelete}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             });
 
             if (response.ok) {
@@ -157,13 +184,14 @@ if (btnCancelDelete) {
 }
 
 // Adicionar novo código à API
-async function addCode(code) {
+async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
     if (!code.trim()) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/items`, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ code: code.trim() })
         });
 
@@ -177,20 +205,23 @@ async function addCode(code) {
             showToast(result.error || 'Erro ao registrar', 'error');
             if (input) input.value = '';
         }
-        // if (input) input.focus();
     } catch (error) {
         console.error('Erro ao registrar item:', error);
         showToast('Erro de conexão com o servidor', 'error');
     }
 }
 
-// Evento: Submissão do formulário
-if (form) {
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (input) addCode(input.value);
-    });
-}
+// Função global para submissão de formulários (como solicitado pelo usuário)
+window.submitForm = async (event) => {
+    event.preventDefault();
+    const form = event.target;
+
+    if (form.id === 'scanForm') {
+        const actionUrl = `${API_BASE_URL}/items`;
+        const code = form.querySelector('#codeInput').value;
+        if (code) await addCode(code, actionUrl);
+    }
+};
 
 // --- Lógica da Câmera (html5-qrcode) ---
 async function startCamera() {
@@ -334,6 +365,22 @@ function closeSidebar() {
 if (btnMenu) btnMenu.addEventListener('click', openSidebar);
 if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
 if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+// Função de Logout
+async function logout() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (response.ok) {
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        window.location.href = 'login.html';
+    }
+}
 
 // Elementos do Modal de Confirmação
 const confirmModal = document.getElementById('confirmModal');

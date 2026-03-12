@@ -6,8 +6,8 @@ session_start([
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Infrastructure\Persistence\MySQLCollectedItemRepository;
-use App\Infrastructure\Persistence\MySQLUserRepository;
+use App\Infrastructure\Persistence\JsonCollectedItemRepository;
+use App\Infrastructure\Persistence\JsonUserRepository;
 use App\Infrastructure\Email\PHPMailerEmailSender;
 use App\Application\Service\CollectItemService;
 use App\Application\Service\ReportService;
@@ -49,8 +49,8 @@ if (empty($path))
     $path = '/';
 
 // Setup DI (Manual for this structure)
-$repository = new MySQLCollectedItemRepository();
-$userRepository = new MySQLUserRepository();
+$repository = new JsonCollectedItemRepository();
+$userRepository = new JsonUserRepository();
 $emailSender = new PHPMailerEmailSender();
 $collectService = new CollectItemService($repository);
 $reportService = new ReportService($repository, $emailSender);

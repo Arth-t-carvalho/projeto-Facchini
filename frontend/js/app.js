@@ -8,26 +8,8 @@ const API_BASE_URL = frontendIndex !== -1
 // Inicializa ícones
 lucide.createIcons();
 
-// Função para verificar autenticação
-async function checkAuth() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/me`, {
-            credentials: 'include'
-        });
-        const data = await response.json();
-
-        if (!data.authenticated) {
-            window.location.href = 'login.html';
-        } else if (document.getElementById('userNameDisplay')) {
-            document.getElementById('userNameDisplay').textContent = data.user.name;
-        }
-    } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
-    }
-}
-
-// Executa verificação imediatamente
-checkAuth();
+// Inicializa ícones
+lucide.createIcons();
 
 // Elementos do DOM
 const form = document.getElementById('scanForm');
@@ -365,22 +347,6 @@ function closeSidebar() {
 if (btnMenu) btnMenu.addEventListener('click', openSidebar);
 if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
 if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
-
-// Função de Logout
-async function logout() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        if (response.ok) {
-            window.location.href = 'login.html';
-        }
-    } catch (error) {
-        console.error('Erro ao fazer logout:', error);
-        window.location.href = 'login.html';
-    }
-}
 
 // Elementos do Modal de Confirmação
 const confirmModal = document.getElementById('confirmModal');

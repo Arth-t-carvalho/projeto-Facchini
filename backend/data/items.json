@@ -4,6 +4,23 @@
         "code": "QR-TEST-001",
         "timestamp": "2026-03-12 12:09:50",
         "scan_count": 1,
-        "status": "archived"
+        "status": "archived",
+        "location": null
+    },
+    {
+        "id": 2,
+        "code": "SEMAFORO-TEST-001",
+        "timestamp": "2026-03-12 13:44:59",
+        "scan_count": 4,
+        "status": "archived",
+        "location": "Filial A"
+    },
+    {
+        "id": 3,
+        "code": "SEMAFORO-TEST-001",
+        "timestamp": "2026-03-12 13:45:23",
+        "scan_count": 4,
+        "status": "inconsistent",
+        "location": "Filial A"
     }
 ]

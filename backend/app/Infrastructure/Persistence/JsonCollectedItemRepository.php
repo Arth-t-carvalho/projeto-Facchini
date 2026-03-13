@@ -24,7 +24,7 @@ class JsonCollectedItemRepository implements CollectedItemRepository
     {
         $content = file_get_contents($this->filePath);
         $data = json_decode($content, true) ?: [];
-        
+
         $items = [];
         foreach ($data as $row) {
             $items[] = new CollectedItem(
@@ -55,7 +55,7 @@ class JsonCollectedItemRepository implements CollectedItemRepository
     public function save(CollectedItem $item): void
     {
         $items = $this->loadItems();
-        
+
         // Simular ID auto-incremento se for novo (ID null ou 0)
         if ($item->getId() === null || $item->getId() <= 0) {
             $maxId = 0;
@@ -132,7 +132,7 @@ class JsonCollectedItemRepository implements CollectedItemRepository
         foreach ($items as $item) {
             if ($item->getCode() === $code && $item->getStatus() === 'pending') {
                 $reflection = new \ReflectionClass($item);
-                
+
                 $scanCountProperty = $reflection->getProperty('scanCount');
                 $scanCountProperty->setAccessible(true);
                 $scanCountProperty->setValue($item, $item->getScanCount() + 1);

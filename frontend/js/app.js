@@ -8,9 +8,6 @@ const API_BASE_URL = frontendIndex !== -1
 // Inicializa ícones
 lucide.createIcons();
 
-// Inicializa ícones
-lucide.createIcons();
-
 // Elementos do DOM
 const form = document.getElementById('scanForm');
 const input = document.getElementById('codeInput');

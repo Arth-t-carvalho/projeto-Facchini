@@ -39,8 +39,6 @@ if ($method === 'OPTIONS') {
 try {
     if ($path === '/items' && $method === 'GET') {
         $controller->listItems();
-    } elseif ($path === '/history' && $method === 'GET') {
-        $controller->listHistory();
     } elseif ($path === '/items' && $method === 'POST') {
         $controller->collectItem();
     } elseif ($path === '/items' && $method === 'DELETE') {

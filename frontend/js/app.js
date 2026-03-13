@@ -62,8 +62,7 @@ function formatDateTime(dbDate) {
 // Função para carregar itens da API
 async function loadItems() {
     try {
-        const isHistoryPage = window.location.pathname.includes('historico.html');
-        const endpoint = isHistoryPage ? `${API_BASE_URL}/history` : `${API_BASE_URL}/items`;
+        const endpoint = `${API_BASE_URL}/items`;
 
         const response = await fetch(endpoint, {
             credentials: 'include'

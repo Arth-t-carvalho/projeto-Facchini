@@ -46,6 +46,27 @@
         "code": "90000000001637475636",
         "timestamp": "2026-03-13 18:32:36",
         "scan_count": 1,
+        "status": "archived"
+    },
+    {
+        "id": 8,
+        "code": "90000000001637475636",
+        "timestamp": "2026-03-13 19:04:33",
+        "scan_count": 1,
+        "status": "archived"
+    },
+    {
+        "id": 9,
+        "code": "90000000001620643450",
+        "timestamp": "2026-03-13 19:04:45",
+        "scan_count": 1,
+        "status": "archived"
+    },
+    {
+        "id": 10,
+        "code": "90000000001637475636",
+        "timestamp": "2026-03-13 19:56:28",
+        "scan_count": 1,
         "status": "pending"
     }
 ]

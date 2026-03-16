@@ -1,19 +1,12 @@
 <?php
 
-session_start([
-    'cookie_path' => '/',
-]);
-
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Infrastructure\Persistence\MySQLCollectedItemRepository;
-use App\Infrastructure\Persistence\MySQLUserRepository;
+use App\Infrastructure\Persistence\JsonCollectedItemRepository;
 use App\Infrastructure\Email\PHPMailerEmailSender;
 use App\Application\Service\CollectItemService;
 use App\Application\Service\ReportService;
-use App\Application\Service\AuthService;
 use App\Presentation\Controller\CollectController;
-use App\Presentation\Controller\AuthController;
 
 // Simple .env Loader
 if (file_exists(__DIR__ . '/../.env')) {
@@ -49,14 +42,11 @@ if (empty($path))
     $path = '/';
 
 // Setup DI (Manual for this structure)
-$repository = new MySQLCollectedItemRepository();
-$userRepository = new MySQLUserRepository();
+$repository = new JsonCollectedItemRepository();
 $emailSender = new PHPMailerEmailSender();
 $collectService = new CollectItemService($repository);
 $reportService = new ReportService($repository, $emailSender);
-$authService = new AuthService($userRepository);
 $controller = new CollectController($repository, $collectService, $reportService);
-$authController = new AuthController($authService);
 
 // Handle CORS
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
@@ -74,24 +64,16 @@ if ($method === 'OPTIONS') {
 try {
     if ($path === '/items' && $method === 'GET') {
         $controller->listItems();
-    } elseif ($path === '/history' && $method === 'GET') {
-        $controller->listHistory();
     } elseif ($path === '/items' && $method === 'POST') {
         $controller->collectItem();
     } elseif ($path === '/items' && $method === 'DELETE') {
         $controller->clearAll();
+    } elseif (preg_match('#^/items/([^/]+)/receive$#', $path, $matches) && $method === 'POST') {
+        $controller->receiveItem(urldecode($matches[1]));
     } elseif (preg_match('#^/items/(\d+)$#', $path, $matches) && $method === 'DELETE') {
         $controller->deleteItem((int) $matches[1]);
     } elseif ($path === '/report' && $method === 'POST') {
         $controller->sendReport();
-    } elseif ($path === '/login' && $method === 'POST') {
-        $authController->login();
-    } elseif ($path === '/register' && $method === 'POST') {
-        $authController->register();
-    } elseif ($path === '/logout' && $method === 'POST') {
-        $authController->logout();
-    } elseif ($path === '/me' && $method === 'GET') {
-        $authController->me();
     } else {
         http_response_code(404);
         echo json_encode(['error' => 'Rota não encontrada (' . $path . ')']);

@@ -71,8 +71,6 @@
                 style="background:#D32F2F;color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">
                 <div style="display:flex; flex-direction:column;">
                     <span style="font-size:17px;font-weight:700;letter-spacing:.5px;">Menu</span>
-                    <span id="userNameDisplay"
-                        style="font-size:11px; opacity:0.8; font-weight:400;">Carregando...</span>
                 </div>
                 <button id="btnCloseSidebar"
                     style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
@@ -81,24 +79,10 @@
             </div>
             <ul style="list-style:none;flex:1;padding:10px 0;margin:0;">
                 <li>
-                    <a href="index.html"
+                    <a href="javascript:void(0)"
                         style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#D32F2F;text-decoration:none;font-size:15px;font-weight:600;background:#fbe9e7;border-left:3px solid #D32F2F;">
                         <i data-lucide="scan-line" width="20" height="20"></i>
                         <span>Leitor QR</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="historico.html"
-                        style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#333;text-decoration:none;font-size:15px;font-weight:500;border-left:3px solid transparent;">
-                        <i data-lucide="history" width="20" height="20"></i>
-                        <span>Histórico</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" onclick="logout()"
-                        style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#D32F2F;text-decoration:none;font-size:15px;font-weight:500;border-left:3px solid transparent;">
-                        <i data-lucide="log-out" width="20" height="20"></i>
-                        <span>Sair</span>
                     </a>
                 </li>
             </ul>
@@ -173,12 +157,12 @@
         <!-- Modal de Confirmação (Limpar Tudo) -->
         <div class="modal-overlay" id="confirmModal">
             <div class="confirm-box">
-                <div class="confirm-icon">
+                <div class="confirm-icon" id="confirmModalIconContainer">
                     <!-- Ícone de lixeira da Lucide -->
                     <i data-lucide="trash-2" width="48" height="48"></i>
                 </div>
-                <h3 class="confirm-title" style="font-size: 20px; font-weight: 700;">Limpar Tudo?</h3>
-                <p class="confirm-text">
+                <h3 class="confirm-title" id="confirmModalTitle" style="font-size: 20px; font-weight: 700;">Limpar Tudo?</h3>
+                <p class="confirm-text" id="confirmModalText">
                     Existem <strong id="modalItemCount" style="color: var(--fachini-blue);">0</strong> itens na
                     lista.<br>
                     Tem certeza que deseja apagar tudo? Esta ação não pode ser desfeita.
@@ -274,8 +258,31 @@
             </div>
         </div>
 
+        <!-- Modal de Recepção de Produto (Status 3 - Vermelho) -->
+        <div class="modal-overlay" id="receiveConfirmModal" style="z-index: 1020;">
+            <div class="confirm-box" style="gap: 12px;">
+                <div class="confirm-icon" style="color: var(--danger); margin: 0 auto;">
+                    <i data-lucide="package-check" width="56" height="56"></i>
+                </div>
+                <h3 class="confirm-title" style="font-size: 20px; font-weight: 700; color: var(--danger);">Confirmar Chegada</h3>
+                <p class="confirm-text" style="font-size: 13px; line-height: 1.4;">
+                    O produto <strong id="receiveCodeDisplay" style="color: var(--text-dark); background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">---</strong> chegou ao destino final.
+                </p>
+                <button type="button" class="btn-receive-rescan" id="btnRescanReceive" title="Escanear novamente para confirmar">
+                    <i data-lucide="qr-code" width="18" height="18"></i> Escanear novamente
+                </button>
+                <div style="width: 100%; text-align: left; margin-top: 8px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Observação (Obrigatório):</label>
+                    <textarea id="receiveObservation" class="receive-modal-textarea" rows="3" placeholder="Ex: Produto em perfeitas condições, embalagem intacta..." required></textarea>
+                </div>
+                <div class="confirm-actions" style="margin-top: 10px;">
+                    <button class="btn" id="btnCancelReceive" style="background: transparent; color: var(--text-muted); font-weight: 600;">Cancelar</button>
+                    <button class="btn btn-secondary" id="btnConfirmReceive" style="background: var(--danger); border-radius: 12px;">Confirmar Recebimento</button>
+                </div>
+            </div>
+        </div>
 
-        <script src="js/app.js?v=2"></script>
+        <script src="js/app.js?v=4"></script>
 
 </body>
 

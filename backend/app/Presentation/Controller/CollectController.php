@@ -24,7 +24,7 @@ class CollectController
 
     public function listItems(): void
     {
-        $items = $this->repository->findByStatus('pending');
+        $items = $this->repository->findActiveVisually();
         $this->jsonResponse(array_map(fn($item) => $item->toArray(), $items));
     }
 
@@ -37,7 +37,7 @@ class CollectController
     public function collectItem(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
-        $code = $data['code'] ?? '';
+        $code = trim($data['code'] ?? '');
 
         try {
             $item = $this->collectService->execute($code);
@@ -45,18 +45,42 @@ class CollectController
         } catch (\InvalidArgumentException $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
-            $this->jsonResponse(['error' => $e->getMessage()], 409);
+            $msg = $e->getMessage();
+            if (strpos($msg, 'PRECONDITION_REQUIRED') !== false) {
+                // Return 428 to signal the frontend to show the receive modal
+                $safeMsg = str_replace('PRECONDITION_REQUIRED: ', '', $msg);
+                $this->jsonResponse(['error' => $safeMsg, 'code' => $code, 'requires_receive' => true], 428);
+            } else {
+                $this->jsonResponse(['error' => $msg], 409);
+            }
+        }
+    }
+    
+    public function receiveItem(string $code): void
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $observation = trim($data['observation'] ?? '');
+        
+        try {
+            $item = $this->collectService->receiveItem($code, $observation);
+            $this->jsonResponse($item->toArray(), 200);
+        } catch (\InvalidArgumentException $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 404);
+        } catch (\Exception $e) {
+            $this->jsonResponse(['error' => $e->getMessage()], 400);
         }
     }
 
     public function sendReport(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
-        $email = $data['email'] ?? 'arthur.t.carvalho@aluno.senai.br'; // Fallback se não enviado
+        $destination = trim($data['destination'] ?? 'Destino Não Informado');
+        $email = trim($data['email'] ?? 'arthur.t.carvalho@aluno.senai.br');
 
         try {
-            $this->reportService->sendReport($email);
-            $this->jsonResponse(['success' => 'Relatório enviado com sucesso.']);
+            // Updated to dispatch and transition states 1 -> 2
+            $this->reportService->dispatchAndSendReport($destination, $email);
+            $this->jsonResponse(['success' => 'Itens despachados e relatório enviado com sucesso.']);
         } catch (\Exception $e) {
             $this->jsonResponse(['error' => $e->getMessage()], 500);
         }
@@ -64,8 +88,8 @@ class CollectController
 
     public function clearAll(): void
     {
-        $this->repository->archiveAll();
-        $this->jsonResponse(['success' => 'Todos os itens foram arquivados.']);
+        $this->repository->clearActive();
+        $this->jsonResponse(['success' => 'Os itens ativos foram ocultados da tela principal.']);
     }
 
     public function deleteItem(int $id): void

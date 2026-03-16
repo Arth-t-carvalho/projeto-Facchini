@@ -2,6 +2,7 @@
 
 namespace App\Application\Service;
 
+use App\Domain\Model\CollectedItem;
 use App\Domain\Repository\CollectedItemRepository;
 use App\Infrastructure\Email\EmailSender;
 
@@ -16,32 +17,39 @@ class ReportService
         $this->emailSender = $emailSender;
     }
 
-    public function sendReport(string $email): void
+    public function dispatchAndSendReport(string $destination, string $email): void
     {
-        $items = $this->repository->findByStatus('pending');
+        $items = $this->repository->findByStatus(CollectedItem::STATUS_ORIGIN);
 
         if (empty($items)) {
-            throw new \Exception("Nenhum item recolhido para enviar.");
+            throw new \Exception("Nenhum item na origem para despachar.");
         }
 
-        $body = "Relatório de Coleta de Dados - Facchini Logística\n\n";
-        $body .= "Data: " . date('d/m/Y H:i:s') . "\n";
-        $body .= "Total de volumes: " . count($items) . "\n\n";
-        $body .= "===================================\n";
-        $body .= "CÓDIGO\t\t\tDATA/HORA\n";
-        $body .= "===================================\n";
-
+        $dispatched = [];
+        // Transiciona os itens de Origem (1) para Trânsito (2)
         foreach ($items as $item) {
-            $body .= $item->getCode() . "\t\t" . $item->getTimestamp()->format('d/m/Y H:i:s') . "\n";
+            $item->transitTo($destination);
+            $this->repository->save($item); // Save individually since the lock is per-call now (can optimize later if needed, but array size is usually small)
+            $dispatched[] = $item;
         }
 
-        // ABAIXO O SISTEMA ENVIA PARA O GMAIL VINCULADO À FILIAL SELECIONADA
+        $body = "Relatório de Despacho de Carga - Facchini Logística\n\n";
+        $body .= "Data de Envio: " . date('d/m/Y H:i:s') . "\n";
+        $body .= "Destino: " . $destination . "\n";
+        $body .= "Total de volumes: " . count($dispatched) . "\n\n";
+        $body .= "===================================\n";
+        $body .= "CÓDIGO\t\t\tDATA/HORA ORIGEM\n";
+        $body .= "===================================\n";
+
+        foreach ($dispatched as $item) {
+            $body .= $item->getCode() . "\t\t" . $item->getCreatedAt()->format('d/m/Y H:i:s') . "\n";
+        }
+
+        // Envia para o GMAIL vinculado à filial selecionada
         $this->emailSender->send(
             $email,
-            'Coleta de Dados - ' . date('d/m/Y'),
+            'Despacho de Carga (' . $destination . ') - ' . date('d/m/Y'),
             $body
         );
-
-        $this->repository->archiveAll();
     }
 }

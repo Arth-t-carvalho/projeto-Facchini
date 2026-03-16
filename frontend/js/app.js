@@ -8,27 +8,6 @@ const API_BASE_URL = frontendIndex !== -1
 // Inicializa ícones
 lucide.createIcons();
 
-// Função para verificar autenticação
-async function checkAuth() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/me`, {
-            credentials: 'include'
-        });
-        const data = await response.json();
-
-        if (!data.authenticated) {
-            window.location.href = 'login.html';
-        } else if (document.getElementById('userNameDisplay')) {
-            document.getElementById('userNameDisplay').textContent = data.user.name;
-        }
-    } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
-    }
-}
-
-// Executa verificação imediatamente
-checkAuth();
-
 // Elementos do DOM
 const form = document.getElementById('scanForm');
 const input = document.getElementById('codeInput');
@@ -57,9 +36,21 @@ const deleteConfirmModal = document.getElementById('deleteConfirmModal');
 const btnCancelDelete = document.getElementById('btnCancelDelete');
 const btnConfirmDelete = document.getElementById('btnConfirmDelete');
 
+// Elementos do Modal de Chegada (Receive)
+const receiveConfirmModal = document.getElementById('receiveConfirmModal');
+const btnCancelReceive = document.getElementById('btnCancelReceive');
+const btnConfirmReceive = document.getElementById('btnConfirmReceive');
+const btnRescanReceive = document.getElementById('btnRescanReceive');
+const receiveCodeDisplay = document.getElementById('receiveCodeDisplay');
+const receiveObservation = document.getElementById('receiveObservation');
+
 let html5QrCode = null;
 let currentFacingMode = "environment";
 let itemToDelete = null;
+let itemToReceiveCode = null;
+let receiveRescanConfirmed = false;
+let cameraMode = 'collect'; // 'collect' | 'receiveConfirm'
+let receiveModalHiddenForRescan = false;
 
 // Função para mostrar notificação rápida
 function showToast(message, type = 'success') {
@@ -80,11 +71,11 @@ function formatDateTime(dbDate) {
 // Função para carregar itens da API
 async function loadItems() {
     try {
-        const isHistoryPage = window.location.pathname.includes('historico.html');
-        const endpoint = isHistoryPage ? `${API_BASE_URL}/history` : `${API_BASE_URL}/items`;
+        const endpoint = `${API_BASE_URL}/items`;
 
         const response = await fetch(endpoint, {
-            credentials: 'include'
+            credentials: 'include',
+            cache: 'no-store'
         });
         const items = await response.json();
         renderList(items);
@@ -115,14 +106,21 @@ function renderList(items) {
 
         items.forEach(item => {
             const li = document.createElement('li');
-            li.className = 'data-item';
-            const scanBadge = item.scan_count > 1
-                ? `<span class="scan-count-badge" title="Escaneado ${item.scan_count} vezes"><i data-lucide="repeat" width="11" height="11"></i> ${item.scan_count}x</span>`
-                : '';
+            // Adding status class for css color indication
+            li.className = `data-item status-${item.status}`;
+            
+            // Format time based on status
+            let timeStr = formatDateTime(item.created_at);
+            let statusStr = `<span style="color: #28a745; font-weight: 600; font-size: 11px;">(Origem)</span>`;
+            if (item.status === 2) {
+                timeStr = formatDateTime(item.sent_at);
+                statusStr = `<span style="color: #ffc107; font-weight: 600; font-size: 11px;">(Em Trânsito: ${item.destination})</span>`;
+            }
+            
             li.innerHTML = `
                 <div class="item-info">
-                    <span class="item-code">${item.code} ${scanBadge}</span>
-                    <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${formatDateTime(item.timestamp)}</span>
+                    <span class="item-code">${item.code}</span>
+                    <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${timeStr} ${statusStr}</span>
                 </div>
                 <button class="btn-delete-item" onclick="deleteItemById(${item.id})" title="Remover item">
                     <i data-lucide="trash-2" width="16" height="16"></i>
@@ -201,6 +199,21 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
             showToast('Código registrado!');
             if (input) input.value = '';
             loadItems();
+        } else if (response.status === 428) {
+            // Signal from backend that item is in transit and needs manual receipt at destination
+            itemToReceiveCode = result.code || code.trim();
+            if (receiveCodeDisplay) receiveCodeDisplay.textContent = itemToReceiveCode;
+            if (receiveObservation) receiveObservation.value = '';
+            if (receiveConfirmModal) {
+                receiveConfirmModal.style.display = 'flex';
+                lucide.createIcons();
+            }
+            if(html5QrCode && html5QrCode.isScanning) {
+                await stopCamera(); // Stop camera specifically when model is open
+            }
+            
+            if (input) input.value = '';
+            showToast('Item em trânsito. Necessário confirmação.', 'warning');
         } else {
             showToast(result.error || 'Erro ao registrar', 'error');
             if (input) input.value = '';
@@ -209,6 +222,85 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
         console.error('Erro ao registrar item:', error);
         showToast('Erro de conexão com o servidor', 'error');
     }
+}
+
+// Lógica de Cancelamento da Recepção
+if (btnCancelReceive) {
+    btnCancelReceive.addEventListener('click', () => {
+        if (receiveConfirmModal) {
+            receiveConfirmModal.style.display = 'none';
+        }
+        itemToReceiveCode = null;
+        receiveRescanConfirmed = false;
+        cameraMode = 'collect';
+    });
+}
+
+// Lógica de Confirmação da Recepção
+if (btnConfirmReceive) {
+    btnConfirmReceive.addEventListener('click', async () => {
+        if (!itemToReceiveCode) return;
+        const obs = receiveObservation ? receiveObservation.value.trim() : '';
+
+        if (!obs) {
+            showToast('A observação é obrigatória.', 'error');
+            return;
+        }
+
+        const ogText = btnConfirmReceive.innerHTML;
+        btnConfirmReceive.innerHTML = 'Processando...';
+        btnConfirmReceive.disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/items/${encodeURIComponent(itemToReceiveCode)}/receive`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ observation: obs })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Chegada confirmada com sucesso!');
+                if (receiveConfirmModal) receiveConfirmModal.style.display = 'none';
+                itemToReceiveCode = null;
+                receiveRescanConfirmed = false;
+                cameraMode = 'collect';
+                loadItems(); // Refresh the list
+            } else {
+                showToast(result.error || 'Erro ao receber item.', 'error');
+            }
+        } catch (error) {
+            console.error('Erro na recepção do item:', error);
+            showToast('Erro de conexão ao receber.', 'error');
+        } finally {
+            btnConfirmReceive.innerHTML = ogText;
+            btnConfirmReceive.disabled = false;
+            btnConfirmReceive.style.opacity = '1';
+        }
+    });
+}
+
+// Re-scan obrigatório para confirmar chegada
+if (btnRescanReceive) {
+    btnRescanReceive.addEventListener('click', async () => {
+        if (!itemToReceiveCode) {
+            showToast('Nenhum item para confirmar.', 'error');
+            return;
+        }
+        cameraMode = 'receiveConfirm';
+        // Evita empilhamento: a modal vermelha tem z-index maior que a câmera
+        if (receiveConfirmModal && receiveConfirmModal.style.display !== 'none') {
+            receiveConfirmModal.style.display = 'none';
+            receiveModalHiddenForRescan = true;
+        } else {
+            receiveModalHiddenForRescan = false;
+        }
+        if (cameraModal) cameraModal.style.display = 'flex';
+        await startCamera();
+        lucide.createIcons();
+    });
 }
 
 // Função global para submissão de formulários (como solicitado pelo usuário)
@@ -258,7 +350,37 @@ async function startCamera() {
     const onSuccess = (decodedText) => {
         console.log("Código lido:", decodedText);
         if (navigator.vibrate) navigator.vibrate(200);
-        addCode(decodedText);
+        const scanned = (decodedText || '').trim();
+
+        if (cameraMode === 'receiveConfirm') {
+            const expected = (itemToReceiveCode || '').trim();
+            if (!expected) {
+                showToast('Nenhum item para confirmar.', 'error');
+                return;
+            }
+            if (scanned === expected) {
+                receiveRescanConfirmed = true;
+                if (btnConfirmReceive) {
+                    btnConfirmReceive.disabled = false;
+                    btnConfirmReceive.style.opacity = '1';
+                }
+                showToast('Código confirmado. Você pode finalizar o recebimento.');
+                // Fecha câmera e volta para a modal de chegada (observações)
+                cameraMode = 'collect';
+                if (cameraModal) cameraModal.style.display = 'none';
+                stopCamera();
+                if (receiveConfirmModal) {
+                    receiveConfirmModal.style.display = 'flex';
+                    receiveModalHiddenForRescan = false;
+                    lucide.createIcons();
+                }
+            } else {
+                showToast('Código não confere. Escaneie o mesmo código do produto.', 'error');
+            }
+            return;
+        }
+
+        addCode(scanned);
         closeCamera();
     };
 
@@ -316,6 +438,13 @@ async function stopCamera() {
 function closeCamera() {
     if (cameraModal) cameraModal.style.display = 'none';
     stopCamera();
+
+    // Se o usuário estava confirmando chegada via re-scan, reabre a modal vermelha
+    if (cameraMode === 'receiveConfirm' && itemToReceiveCode && receiveConfirmModal && receiveModalHiddenForRescan) {
+        receiveConfirmModal.style.display = 'flex';
+        receiveModalHiddenForRescan = false;
+        lucide.createIcons();
+    }
 }
 
 // Evento: Abrir Modal da Câmera
@@ -366,22 +495,6 @@ if (btnMenu) btnMenu.addEventListener('click', openSidebar);
 if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
 if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
 
-// Função de Logout
-async function logout() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        if (response.ok) {
-            window.location.href = 'login.html';
-        }
-    } catch (error) {
-        console.error('Erro ao fazer logout:', error);
-        window.location.href = 'login.html';
-    }
-}
-
 // Elementos do Modal de Confirmação
 const confirmModal = document.getElementById('confirmModal');
 const btnCancelClear = document.getElementById('btnCancelClear');
@@ -391,12 +504,33 @@ const modalItemCount = document.getElementById('modalItemCount');
 // Ação ao clicar no botão principal "Limpar Tudo"
 if (btnClearAll) {
     btnClearAll.addEventListener('click', () => {
-        if (modalItemCount && itemCount) {
-            // Pega o número atual do contador da tela e joga para o modal
-            modalItemCount.textContent = itemCount.textContent || '0';
+        const currentCount = parseInt(itemCount.textContent) || 0;
+        const modalTitle = document.getElementById('confirmModalTitle');
+        const modalText = document.getElementById('confirmModalText');
+        const modalIconContainer = document.getElementById('confirmModalIconContainer');
+        const btnConfirm = document.getElementById('btnConfirmClear');
+        const btnCancel = document.getElementById('btnCancelClear');
+
+        if (currentCount === 0) {
+            // Modo Aviso: Lista Vazia
+            if (modalTitle) modalTitle.textContent = 'Lista Vazia';
+            if (modalText) modalText.innerHTML = 'Não existem itens na lista para excluir.';
+            if (modalIconContainer) modalIconContainer.innerHTML = '<i data-lucide="info" width="48" height="48" style="color: var(--fachini-orange);"></i>';
+            if (btnConfirm) btnConfirm.style.display = 'none';
+            if (btnCancel) btnCancel.textContent = 'Entendido';
+        } else {
+            // Modo Confirmação: Original
+            if (modalTitle) modalTitle.textContent = 'Limpar Tudo?';
+            if (modalText) {
+                modalText.innerHTML = `Existem <strong id="modalItemCount" style="color: var(--fachini-blue);">${currentCount}</strong> itens na lista.<br>Tem certeza que deseja apagar tudo? Esta ação não pode ser desfeita.`;
+            }
+            if (modalIconContainer) modalIconContainer.innerHTML = '<i data-lucide="trash-2" width="48" height="48"></i>';
+            if (btnConfirm) btnConfirm.style.display = 'block';
+            if (btnCancel) btnCancel.textContent = 'Cancelar';
         }
-        if (confirmModal) confirmModal.style.display = 'flex'; // Exibe o modal
-        lucide.createIcons(); // Garante que o ícone de lixeira apareça
+
+        if (confirmModal) confirmModal.style.display = 'flex';
+        lucide.createIcons();
     });
 }
 
@@ -796,3 +930,4 @@ if (btnEnterApp && splashScreen && appContainer) {
         });
     }
 }
+

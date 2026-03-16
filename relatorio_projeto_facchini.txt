@@ -1,0 +1,42 @@
+# Relatório de Desenvolvimento - Projeto Facchini (Rastreabilidade Logística)
+
+Data do Relatório: 16 de Março de 2026
+
+## 1. Objetivo Concluído
+O sistema anterior, baseado num conceito simples de semáforo, foi integralmente evoluído para um fluxo de rastreabilidade logística de ponta a ponta. O foco principal foi manter a leveza da aplicação (sem banco de dados SQL), utilizando persistência local em arquivo JSON de forma segura, e garantindo que o ciclo de vida do pacote seja rastreado desde a origem até o destino final.
+
+## 2. Persistência de Dados e Segurança
+*   **Banco de Dados JSON:** Todos os dados (itens, status e histórico) agora são salvos no arquivo `data/items.json`.
+*   **Controle de Concorrência (Thread-safe):** Implementamos a função nativa `flock()` no PHP. Isso garante que, se dois ou mais coletores/celulares tentarem ler ou gravar no arquivo JSON ao mesmo exato milissegundo, o arquivo será bloqueado, enfileirando as ações e impedindo qualquer corrupção dos dados da Facchini.
+
+## 3. Os 3 Estados do Produto (Regras de Negócio)
+O sistema agora obedece rigorosamente a seguinte esteira:
+
+1.  **Status 1 (Origem - Verde):** 
+    *   *Ação:* O pacote é lido (bipado) na expedição.
+    *   *Sistema:* O código é salvo no arquivo JSON com o Status 1 e um carimbo de `created_at`.
+    *   *Visual:* Na lista principal, o item ganha um marcador verde.
+2.  **Status 2 (Em Trânsito - Amarelo):**
+    *   *Ação:* O operador clica em "Finalizar e Enviar", escolhe a filial de destino e confirma.
+    *   *Sistema:* O Backend faz a transição em lote de *todos* os itens do Status 1 para o Status 2. É atrelada a filial de destino a cada pacote, gravado o timestamp `sent_at`, e o relatório é disparado por e-mail.
+    *   *Visual:* O marcador na lista da UI muda para a cor amarela, indicando que a carga está a caminho.
+3.  **Status 3 (Destino Final - Vermelho):**
+    *   *Ação:* O pacote chega na filial alvo e é lido pela lente do scanner.
+    *   *Sistema/Visual:* O Backend barra magicamente a inserção de um novo pacote ao detectar que *este* pacote já está em trânsito (Status 2). Ele retorna um alerta ("HTTP 428 Precondition Required"). O Frontend (app.js) intercepta esse alerta, paralisa o scanner e sobrepõe uma **Modal de Chegada (Vermelha)** na tela.
+    *   *Conclusão:* O usuário da filial destino preenche uma observação obrigatória (ex: "Caixa intacta") e confirma. O item vai para o Status 3, ganha o `received_at` e sai da tela de pendências para manter o Frontend ágil (Clean View).
+
+## 4. O que foi alterado sob o capô (Arquitetura Técnica)
+
+### Backend (PHP Coren)
+*   **`JsonCollectedItemRepository.php`**: Reescrito para usar `fopen`, `fread`, `fwrite` e `flock`. Criados métodos para buscar apenas itens ativos visualmente e ocultar o restante da UI sem apagar.
+*   **`CollectedItem.php` (Modelo)**: Estruturação para suportar as transições de status, adicionamento de log reverso no array de `history`.
+*   **`CollectItemService.php` / `ReportService.php`**: Injeção da inteligência que proíbe pular etapas. Garante a cronologia 1 -> 2 -> 3.
+*   **`CollectController.php` & `index.php`**: Implementado novo endpoint dedicado a fechamentos de ciclo (`POST /items/{code}/receive`).
+
+### Frontend (HTML/CSS/JS)
+*   **`index.html`**: Construída e posicionada a nova estrura `<div id="receiveConfirmModal">...</div>`.
+*   **`style.css`**: Adicionado as identidades visuais de rastreio (`.status-1`, `.status-2`, cor de foco do textarea, etc).
+*   **`app.js`**: Implementadas lógicas condicionais complexas para decifrar erros da API, forçar fechamento/abertura inteligente da câmera (html5-qrcode) para que não escaneie itens em loop enquanto preenche a observação de chegada, e gestão de deleção/arquivamento do frontend (Limpar Tudo agora apenas oculta itens recebidos, mantendo a validez histórica para o log de transporte).
+
+---
+*Este arquivo serve como evidência do sprint concluído para a gerência do projeto e base de contexto para qualquer futuro engenheiro de software que continue o trabalho.*

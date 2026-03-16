@@ -68,6 +68,8 @@ try {
         $controller->collectItem();
     } elseif ($path === '/items' && $method === 'DELETE') {
         $controller->clearAll();
+    } elseif (preg_match('#^/items/([^/]+)/receive$#', $path, $matches) && $method === 'POST') {
+        $controller->receiveItem(urldecode($matches[1]));
     } elseif (preg_match('#^/items/(\d+)$#', $path, $matches) && $method === 'DELETE') {
         $controller->deleteItem((int) $matches[1]);
     } elseif ($path === '/report' && $method === 'POST') {

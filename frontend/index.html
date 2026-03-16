@@ -157,12 +157,12 @@
         <!-- Modal de Confirmação (Limpar Tudo) -->
         <div class="modal-overlay" id="confirmModal">
             <div class="confirm-box">
-                <div class="confirm-icon">
+                <div class="confirm-icon" id="confirmModalIconContainer">
                     <!-- Ícone de lixeira da Lucide -->
                     <i data-lucide="trash-2" width="48" height="48"></i>
                 </div>
-                <h3 class="confirm-title" style="font-size: 20px; font-weight: 700;">Limpar Tudo?</h3>
-                <p class="confirm-text">
+                <h3 class="confirm-title" id="confirmModalTitle" style="font-size: 20px; font-weight: 700;">Limpar Tudo?</h3>
+                <p class="confirm-text" id="confirmModalText">
                     Existem <strong id="modalItemCount" style="color: var(--fachini-blue);">0</strong> itens na
                     lista.<br>
                     Tem certeza que deseja apagar tudo? Esta ação não pode ser desfeita.
@@ -258,6 +258,29 @@
             </div>
         </div>
 
+        <!-- Modal de Recepção de Produto (Status 3 - Vermelho) -->
+        <div class="modal-overlay" id="receiveConfirmModal" style="z-index: 1020;">
+            <div class="confirm-box" style="gap: 12px;">
+                <div class="confirm-icon" style="color: var(--danger); margin: 0 auto;">
+                    <i data-lucide="package-check" width="56" height="56"></i>
+                </div>
+                <h3 class="confirm-title" style="font-size: 20px; font-weight: 700; color: var(--danger);">Confirmar Chegada</h3>
+                <p class="confirm-text" style="font-size: 13px; line-height: 1.4;">
+                    O produto <strong id="receiveCodeDisplay" style="color: var(--text-dark); background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">---</strong> chegou ao destino final.
+                </p>
+                <button type="button" class="btn-receive-rescan" id="btnRescanReceive" title="Escanear novamente para confirmar">
+                    <i data-lucide="qr-code" width="18" height="18"></i> Escanear novamente
+                </button>
+                <div style="width: 100%; text-align: left; margin-top: 8px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Observação (Obrigatório):</label>
+                    <textarea id="receiveObservation" class="receive-modal-textarea" rows="3" placeholder="Ex: Produto em perfeitas condições, embalagem intacta..." required></textarea>
+                </div>
+                <div class="confirm-actions" style="margin-top: 10px;">
+                    <button class="btn" id="btnCancelReceive" style="background: transparent; color: var(--text-muted); font-weight: 600;">Cancelar</button>
+                    <button class="btn btn-secondary" id="btnConfirmReceive" style="background: var(--danger); border-radius: 12px;">Confirmar Recebimento</button>
+                </div>
+            </div>
+        </div>
 
         <script src="js/app.js?v=4"></script>
 

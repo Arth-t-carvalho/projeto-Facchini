@@ -9,6 +9,7 @@
     --fachini-orange: #F26522;
     --fachini-orange-hover: #D9531E;
     --bg-light: #F4F6F8;
+    --bg-surface: #FFFFFF;
     --text-dark: #333333;
     --text-muted: #777777;
     --danger: #DC3545;
@@ -16,6 +17,7 @@
     --border: #E0E0E0;
     --primary-red: #D32F2F;
     --primary-red-hover: #B71C1C;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -439,6 +441,26 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     animation: slideIn 0.3s ease-out;
     gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Status Indicators (Verde / Amarelo) */
+.data-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+}
+
+.data-item.status-1::before {
+    background-color: #28a745; /* Verde - Origem */
+}
+
+.data-item.status-2::before {
+    background-color: #ffc107; /* Amarelo - Trânsito */
 }
 
 @keyframes slideIn {
@@ -679,6 +701,41 @@ body {
     font-size: 14px;
 }
 
+.btn-receive-rescan {
+    width: 100%;
+    border: 2px dashed rgba(220, 53, 69, 0.55);
+    background: rgba(220, 53, 69, 0.06);
+    color: var(--danger);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-receive-rescan:hover {
+    background: rgba(220, 53, 69, 0.10);
+    border-color: rgba(220, 53, 69, 0.75);
+    transform: translateY(-1px);
+}
+
+.btn-receive-rescan:active {
+    transform: translateY(0);
+}
+
+/* Estado disabled para botões dentro da modal vermelha */
+#receiveConfirmModal .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .modal-header {
     background-color: var(--primary-red);
     color: white;
@@ -696,13 +753,14 @@ body {
     border: none;
     color: white;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
+    margin-left: 10px;
 }
 
 .btn-close-modal:hover {

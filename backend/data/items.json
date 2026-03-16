@@ -1,72 +1,62 @@
 [
     {
-        "id": 1,
-        "code": "QR-TEST-001",
-        "timestamp": "2026-03-12 12:09:50",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
         "id": 2,
-        "code": "SEMAFORO-TEST-001",
-        "timestamp": "2026-03-12 13:44:59",
-        "scan_count": 4,
-        "status": "archived"
+        "code": "90000000001631536463",
+        "status": 3,
+        "destination": "Imperatriz \u2013 MA",
+        "observation": "Teste",
+        "created_at": "2026-03-16 13:13:21",
+        "sent_at": "2026-03-16 13:13:37",
+        "received_at": "2026-03-16 13:14:07",
+        "history": [
+            {
+                "from_status": null,
+                "to_status": 1,
+                "timestamp": "2026-03-16 13:13:21",
+                "user": "Sistema\/App"
+            },
+            {
+                "from_status": 1,
+                "to_status": 2,
+                "timestamp": "2026-03-16 13:13:37",
+                "user": "Sistema\/App"
+            },
+            {
+                "from_status": 2,
+                "to_status": 3,
+                "timestamp": "2026-03-16 13:14:07",
+                "user": "Sistema\/App"
+            }
+        ]
     },
     {
-        "id": 3,
-        "code": "SEMAFORO-TEST-001",
-        "timestamp": "2026-03-12 13:45:23",
-        "scan_count": 4,
-        "status": "inconsistent"
-    },
-    {
-        "id": 4,
+        "id": 1,
         "code": "90000000001637475636",
-        "timestamp": "2026-03-13 17:25:01",
-        "scan_count": 2,
-        "status": "archived"
-    },
-    {
-        "id": 5,
-        "code": "90000000001637475636",
-        "timestamp": "2026-03-13 17:33:53",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
-        "id": 6,
-        "code": "gfgfd",
-        "timestamp": "2026-03-13 18:21:42",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
-        "id": 7,
-        "code": "90000000001637475636",
-        "timestamp": "2026-03-13 18:32:36",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
-        "id": 8,
-        "code": "90000000001637475636",
-        "timestamp": "2026-03-13 19:04:33",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
-        "id": 9,
-        "code": "90000000001620643450",
-        "timestamp": "2026-03-13 19:04:45",
-        "scan_count": 1,
-        "status": "archived"
-    },
-    {
-        "id": 10,
-        "code": "90000000001637475636",
-        "timestamp": "2026-03-13 19:56:28",
-        "scan_count": 1,
-        "status": "pending"
+        "status": 3,
+        "destination": "Rio Verde \u2013 GO",
+        "observation": "Tesre",
+        "created_at": "2026-03-16 12:59:45",
+        "sent_at": "2026-03-16 13:00:02",
+        "received_at": "2026-03-16 13:01:59",
+        "history": [
+            {
+                "from_status": null,
+                "to_status": 1,
+                "timestamp": "2026-03-16 12:59:45",
+                "user": "Sistema\/App"
+            },
+            {
+                "from_status": 1,
+                "to_status": 2,
+                "timestamp": "2026-03-16 13:00:02",
+                "user": "Sistema\/App"
+            },
+            {
+                "from_status": 2,
+                "to_status": 3,
+                "timestamp": "2026-03-16 13:01:59",
+                "user": "Sistema\/App"
+            }
+        ]
     }
 ]

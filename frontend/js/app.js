@@ -40,7 +40,6 @@ const btnConfirmDelete = document.getElementById('btnConfirmDelete');
 const receiveConfirmModal = document.getElementById('receiveConfirmModal');
 const btnCancelReceive = document.getElementById('btnCancelReceive');
 const btnConfirmReceive = document.getElementById('btnConfirmReceive');
-const btnRescanReceive = document.getElementById('btnRescanReceive');
 const receiveCodeDisplay = document.getElementById('receiveCodeDisplay');
 const receiveObservation = document.getElementById('receiveObservation');
 
@@ -48,9 +47,6 @@ let html5QrCode = null;
 let currentFacingMode = "environment";
 let itemToDelete = null;
 let itemToReceiveCode = null;
-let receiveRescanConfirmed = false;
-let cameraMode = 'collect'; // 'collect' | 'receiveConfirm'
-let receiveModalHiddenForRescan = false;
 
 // Função para mostrar notificação rápida
 function showToast(message, type = 'success') {
@@ -231,8 +227,6 @@ if (btnCancelReceive) {
             receiveConfirmModal.style.display = 'none';
         }
         itemToReceiveCode = null;
-        receiveRescanConfirmed = false;
-        cameraMode = 'collect';
     });
 }
 
@@ -265,8 +259,6 @@ if (btnConfirmReceive) {
                 showToast('Chegada confirmada com sucesso!');
                 if (receiveConfirmModal) receiveConfirmModal.style.display = 'none';
                 itemToReceiveCode = null;
-                receiveRescanConfirmed = false;
-                cameraMode = 'collect';
                 loadItems(); // Refresh the list
             } else {
                 showToast(result.error || 'Erro ao receber item.', 'error');
@@ -282,26 +274,7 @@ if (btnConfirmReceive) {
     });
 }
 
-// Re-scan obrigatório para confirmar chegada
-if (btnRescanReceive) {
-    btnRescanReceive.addEventListener('click', async () => {
-        if (!itemToReceiveCode) {
-            showToast('Nenhum item para confirmar.', 'error');
-            return;
-        }
-        cameraMode = 'receiveConfirm';
-        // Evita empilhamento: a modal vermelha tem z-index maior que a câmera
-        if (receiveConfirmModal && receiveConfirmModal.style.display !== 'none') {
-            receiveConfirmModal.style.display = 'none';
-            receiveModalHiddenForRescan = true;
-        } else {
-            receiveModalHiddenForRescan = false;
-        }
-        if (cameraModal) cameraModal.style.display = 'flex';
-        await startCamera();
-        lucide.createIcons();
-    });
-}
+
 
 // Função global para submissão de formulários (como solicitado pelo usuário)
 window.submitForm = async (event) => {
@@ -351,34 +324,6 @@ async function startCamera() {
         console.log("Código lido:", decodedText);
         if (navigator.vibrate) navigator.vibrate(200);
         const scanned = (decodedText || '').trim();
-
-        if (cameraMode === 'receiveConfirm') {
-            const expected = (itemToReceiveCode || '').trim();
-            if (!expected) {
-                showToast('Nenhum item para confirmar.', 'error');
-                return;
-            }
-            if (scanned === expected) {
-                receiveRescanConfirmed = true;
-                if (btnConfirmReceive) {
-                    btnConfirmReceive.disabled = false;
-                    btnConfirmReceive.style.opacity = '1';
-                }
-                showToast('Código confirmado. Você pode finalizar o recebimento.');
-                // Fecha câmera e volta para a modal de chegada (observações)
-                cameraMode = 'collect';
-                if (cameraModal) cameraModal.style.display = 'none';
-                stopCamera();
-                if (receiveConfirmModal) {
-                    receiveConfirmModal.style.display = 'flex';
-                    receiveModalHiddenForRescan = false;
-                    lucide.createIcons();
-                }
-            } else {
-                showToast('Código não confere. Escaneie o mesmo código do produto.', 'error');
-            }
-            return;
-        }
 
         addCode(scanned);
         closeCamera();
@@ -438,13 +383,6 @@ async function stopCamera() {
 function closeCamera() {
     if (cameraModal) cameraModal.style.display = 'none';
     stopCamera();
-
-    // Se o usuário estava confirmando chegada via re-scan, reabre a modal vermelha
-    if (cameraMode === 'receiveConfirm' && itemToReceiveCode && receiveConfirmModal && receiveModalHiddenForRescan) {
-        receiveConfirmModal.style.display = 'flex';
-        receiveModalHiddenForRescan = false;
-        lucide.createIcons();
-    }
 }
 
 // Evento: Abrir Modal da Câmera
@@ -763,6 +701,8 @@ if (btnConfirmSend) {
 
 // Inicialização
 loadItems();
+// Auto-refresh da lista a cada 10 segundos para manter o semáforo atualizado
+setInterval(loadItems, 10000);
 // if (input) input.focus();
 
 // Lógica da Tela de Splash com Carrossel

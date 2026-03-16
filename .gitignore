@@ -1,3 +1,5 @@
 .agent/
 composer.phar
 license
+
+.env

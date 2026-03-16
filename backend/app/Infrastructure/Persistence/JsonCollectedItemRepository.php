@@ -20,9 +20,6 @@ class JsonCollectedItemRepository implements CollectedItemRepository
         }
     }
 
-    /**
-     * Executes a callback within a file lock to guarantee thread-safe read-modify-write.
-     */
     private function withLock(callable $callback)
     {
         $fp = fopen($this->filePath, 'c+');
@@ -32,7 +29,6 @@ class JsonCollectedItemRepository implements CollectedItemRepository
 
         if (flock($fp, LOCK_EX)) {
             try {
-                // Determine file size and read contents
                 fseek($fp, 0, SEEK_END);
                 $filesize = ftell($fp);
                 rewind($fp);
@@ -44,26 +40,17 @@ class JsonCollectedItemRepository implements CollectedItemRepository
 
                 $data = json_decode($content, true) ?: [];
 
-                // Reconstruct items
                 $items = [];
                 foreach ($data as $row) {
                     $items[] = new CollectedItem(
                         $row['code'],
                         (int) $row['id'],
-                        (int) ($row['status'] ?? 1),
-                        $row['destination'] ?? null,
-                        $row['observation'] ?? null,
-                        isset($row['created_at']) ? new \DateTimeImmutable($row['created_at']) : null,
-                        isset($row['sent_at']) && $row['sent_at'] ? new \DateTimeImmutable($row['sent_at']) : null,
-                        isset($row['received_at']) && $row['received_at'] ? new \DateTimeImmutable($row['received_at']) : null,
-                        $row['history'] ?? []
+                        isset($row['created_at']) ? new \DateTimeImmutable($row['created_at']) : null
                     );
                 }
 
-                // Execute the callback passing the current items. MUST return updated items.
                 $updatedItems = $callback($items);
 
-                // Write back
                 $outData = array_map(fn(CollectedItem $item) => $item->toArray(), $updatedItems);
                 
                 ftruncate($fp, 0);
@@ -86,7 +73,6 @@ class JsonCollectedItemRepository implements CollectedItemRepository
     public function save(CollectedItem $item): void
     {
         $this->withLock(function (array $items) use ($item) {
-            
             // Check if it's an update
             foreach ($items as $k => $existingItem) {
                 if ($existingItem->getId() === $item->getId() || $existingItem->getCode() === $item->getCode()) {
@@ -95,7 +81,7 @@ class JsonCollectedItemRepository implements CollectedItemRepository
                 }
             }
 
-            // Simular ID auto-incremento se for novo (ID null ou 0)
+            // Simular ID auto-incremento
             if ($item->getId() === null || $item->getId() <= 0) {
                 $maxId = 0;
                 foreach ($items as $existingItem) {
@@ -118,23 +104,8 @@ class JsonCollectedItemRepository implements CollectedItemRepository
     {
         return $this->withLock(function ($items) {
             usort($items, fn($a, $b) => $b->getCreatedAt() <=> $a->getCreatedAt());
-            return $items; // Locking just to read safely, no modifications returned
+            return $items;
         });
-    }
-
-    public function findByStatus(int $status): array
-    {
-        $items = $this->findAll();
-        $filtered = array_filter($items, fn($item) => $item->getStatus() === $status);
-        return array_values($filtered);
-    }
-    
-    public function findActiveVisually(): array
-    {
-        // For the frontend visually, only show Origin(1) and Transit(2). Received(3) are hidden from main screen. Let's return only those.
-        $items = $this->findAll();
-        $filtered = array_filter($items, fn($item) => $item->getStatus() !== CollectedItem::STATUS_RECEIVED);
-        return array_values($filtered);
     }
 
     public function deleteById(int $id): void
@@ -150,18 +121,10 @@ class JsonCollectedItemRepository implements CollectedItemRepository
         });
     }
     
-    // Deleta do DB apenas itens em status de origem/transito para satisfazer o botão "Limpar Tudo" que limpa a tela principal
-    public function clearActive(): void
+    public function clearAll(): void
     {
-        $this->withLock(function ($items) {
-            $filtered = [];
-            foreach ($items as $item) {
-                if ($item->getStatus() === CollectedItem::STATUS_RECEIVED) {
-                    // Mantém os que já foram recebidos no JSON para integridade
-                    $filtered[] = $item;
-                }
-            }
-            return $filtered; // Remove all status 1 and 2
+        $this->withLock(function () {
+            return [];
         });
     }
 
@@ -175,14 +138,16 @@ class JsonCollectedItemRepository implements CollectedItemRepository
         }
         return null;
     }
-    
-    // Keep it for interface compatibility if there is any, although not used often now.
+
     public function existsByCode(string $code): bool
     {
         return $this->findByCode($code) !== null;
     }
     
-    // Deprecated for trace protocol, used previously
+    // Métodos removidos do sistema de semáforo
+    public function findByStatus(int $status): array { return []; }
+    public function findActiveVisually(): array { return $this->findAll(); }
+    public function clearActive(): void { $this->clearAll(); }
     public function incrementScanCount(string $code): void {}
     public function archiveAll(): void {}
 }

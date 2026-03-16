@@ -43,10 +43,8 @@ if (empty($path))
 
 // Setup DI (Manual for this structure)
 $repository = new JsonCollectedItemRepository();
-$emailSender = new PHPMailerEmailSender();
 $collectService = new CollectItemService($repository);
-$reportService = new ReportService($repository, $emailSender);
-$controller = new CollectController($repository, $collectService, $reportService);
+$controller = new CollectController($repository, $collectService);
 
 // Handle CORS
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
@@ -68,12 +66,8 @@ try {
         $controller->collectItem();
     } elseif ($path === '/items' && $method === 'DELETE') {
         $controller->clearAll();
-    } elseif (preg_match('#^/items/([^/]+)/receive$#', $path, $matches) && $method === 'POST') {
-        $controller->receiveItem(urldecode($matches[1]));
     } elseif (preg_match('#^/items/(\d+)$#', $path, $matches) && $method === 'DELETE') {
         $controller->deleteItem((int) $matches[1]);
-    } elseif ($path === '/report' && $method === 'POST') {
-        $controller->sendReport();
     } else {
         http_response_code(404);
         echo json_encode(['error' => 'Rota não encontrada (' . $path . ')']);

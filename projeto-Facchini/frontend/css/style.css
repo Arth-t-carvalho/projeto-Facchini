@@ -1,0 +1,276 @@
+/* ============================================================
+   FACHINI QRCode — CSS Responsivo (Mobile-First)
+   Breakpoints: <360px | 360-480px | 481-1024px | >1024px
+   ============================================================ */
+
+:root {
+    --fachini-blue: #D32F2F;
+    --fachini-blue-hover: #B71C1C;
+    --fachini-orange: #F26522;
+    --fachini-orange-hover: #D9531E;
+    --bg-light: #F4F6F8;
+    --bg-surface: #FFFFFF;
+    --text-dark: #333333;
+    --text-muted: #777777;
+    --danger: #DC3545;
+    --white: #FFFFFF;
+    --border: #E0E0E0;
+    --primary-red: #D32F2F;
+    --primary-red-hover: #B71C1C;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background-color: #E9ECEF;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+/* ---- Splash Screen ---- */
+#splashScreen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(150deg, #a30b12 0%, #a30b12 25%, #70080c 25%, #70080c 75%, #a30b12 75%, #a30b12 100%);
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    z-index: 99999;
+    transition: opacity 0.4s ease;
+}
+
+#splashScreen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.splash-logo {
+    color: var(--white);
+    font-size: clamp(42px, 11vw, 68px);
+    letter-spacing: 5px;
+    font-weight: 900;
+    text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- Carrossel ---- */
+.carousel-container {
+    width: 100%;
+    max-width: 700px;
+    height: 340px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1200px;
+}
+
+.carousel-item {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.carousel-item.active { transform: translateZ(60px); z-index: 10; opacity: 1; }
+.carousel-item.prev { transform: translateX(-180px) scale(0.65); z-index: 5; opacity: 0.4; }
+.carousel-item.next { transform: translateX(180px) scale(0.65); z-index: 5; opacity: 0.4; }
+.carousel-item.hidden { opacity: 0; visibility: hidden; }
+
+.splash-btn {
+    background: linear-gradient(135deg, #00C853, #00E676);
+    color: #fff;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 200, 83, 0.4);
+}
+
+/* ---- App Container ---- */
+.app-container {
+    width: 100%;
+    background-color: var(--bg-light);
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.app-container.reveal {
+    opacity: 1;
+}
+
+.header {
+    background-color: var(--fachini-blue);
+    color: var(--white);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+/* ---- Scanner Section ---- */
+.scanner-section {
+    padding: 16px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+}
+
+.input-group { display: flex; gap: 10px; }
+.input-wrapper { flex: 1; position: relative; }
+#codeInput {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+}
+
+.btn-scan {
+    background-color: var(--fachini-blue);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* ---- List Section ---- */
+.list-section {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.data-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.item-code {
+    font-weight: 600;
+    color: var(--fachini-blue);
+    font-family: monospace;
+}
+
+.item-time {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.btn-delete-item {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+}
+
+/* ---- Modals ---- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.confirm-box {
+    background: var(--white);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 320px;
+    padding: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.btn {
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary { background: #28a745; color: white; }
+.btn-secondary { background: var(--danger); color: white; }
+
+.toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #28a745;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2000;
+}
+
+.toast.show { opacity: 1; }
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 900;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+}
+
+/* Modal da Câmera especial */
+#reader {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+}

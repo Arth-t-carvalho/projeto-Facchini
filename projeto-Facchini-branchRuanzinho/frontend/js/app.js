@@ -74,11 +74,20 @@ async function loadItems() {
             credentials: 'include',
             cache: 'no-store'
         });
+        
+        if (!response.ok) {
+            throw new Error(`Erro de Servidor: ${response.status}`);
+        }
+        
         const items = await response.json();
         renderList(items);
     } catch (error) {
         console.error('Erro ao carregar itens:', error);
-        showToast('Erro ao carregar dados do servidor', 'error');
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            showToast('Erro de conexão com o servidor', 'error');
+        } else {
+            showToast('Erro ao carregar dados do servidor', 'error');
+        }
     }
 }
 
@@ -157,11 +166,16 @@ if (btnConfirmDelete) {
                 showToast('Item removido com sucesso!');
                 loadItems();
             } else {
-                showToast('Erro ao remover item', 'error');
+                const result = await response.json().catch(() => ({}));
+                showToast(result.error || 'Erro ao remover item', 'error');
             }
         } catch (error) {
             console.error('Erro ao deletar item:', error);
-            showToast('Erro de conexão ao remover', 'error');
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                showToast('Erro de conexão ao remover', 'error');
+            } else {
+                showToast('Erro interno ao excluir item', 'error');
+            }
         } finally {
             deleteConfirmModal.style.display = 'none';
             itemToDelete = null;
@@ -181,30 +195,39 @@ if (btnCancelDelete) {
 
 // Função para detectar tipo de input (QR ou Barcode)
 function detectInputType(code) {
+    if (typeof code !== 'string') return 'unknown';
     const trimmed = code.trim();
+    if (trimmed.length === 0) return 'empty';
+
     // Regex para Código de Barras (EAN-13 ou ITF-14 - 13 a 14 dígitos)
     if (/^\d{13,14}$/.test(trimmed)) {
         return 'barcode';
     }
     // Regex para URL
-    if (/^https?:\/\/\S+$/i.test(trimmed)) {
+    if (/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(trimmed)) {
         return 'qr';
     }
     // Verificação básica de JSON
     if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-        return 'qr';
+        try {
+            JSON.parse(trimmed);
+            return 'qr';
+        } catch (e) {
+            return 'invalid_json';
+        }
     }
     return 'unknown';
 }
 
 // Adicionar novo código à API
 async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
-    const trimmedCode = code.trim();
+    const trimmedCode = (code || '').trim();
     if (!trimmedCode) return;
 
     const type = detectInputType(trimmedCode);
-    if (type === 'unknown') {
-        showToast('Formato inválido. Use QR Code (URL/JSON) ou Código de Barras (13-14 dígitos).', 'error');
+    if (type === 'unknown' || type === 'invalid_json' || type === 'empty') {
+        const msg = type === 'invalid_json' ? 'JSON malformado no QR Code.' : 'Formato inválido. Use QR Code (URL/JSON) ou Código de Barras (13-14 dígitos).';
+        showToast(msg, 'error');
         if (input) input.value = '';
         return;
     }
@@ -217,7 +240,7 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
             body: JSON.stringify({ code: code.trim() })
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({ error: 'Resposta inválida do servidor' }));
 
         if (response.ok) {
             showToast('Código registrado!');
@@ -244,7 +267,11 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
         }
     } catch (error) {
         console.error('Erro ao registrar item:', error);
-        showToast('Erro de conexão com o servidor', 'error');
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            showToast('Erro de conexão com o servidor', 'error');
+        } else {
+            showToast('Erro ao processar registro', 'error');
+        }
     }
 }
 
@@ -283,7 +310,7 @@ if (btnConfirmReceive) {
                 body: JSON.stringify({ observation: obs })
             });
 
-            const result = await response.json();
+            const result = await response.json().catch(() => ({ error: 'Resposta inválida' }));
 
             if (response.ok) {
                 showToast('Chegada confirmada com sucesso!');
@@ -297,7 +324,11 @@ if (btnConfirmReceive) {
             }
         } catch (error) {
             console.error('Erro na recepção do item:', error);
-            showToast('Erro de conexão ao receber.', 'error');
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                showToast('Erro de conexão ao receber.', 'error');
+            } else {
+                showToast('Erro interno ao processar recebimento.', 'error');
+            }
         } finally {
             btnConfirmReceive.innerHTML = ogText;
             btnConfirmReceive.disabled = false;
@@ -767,6 +798,8 @@ if (btnConfirmSend) {
                     })
                 });
 
+                const result = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+
                 if (response.ok) {
                     showToast('Relatório enviado com sucesso!');
                     loadItems();
@@ -776,10 +809,15 @@ if (btnConfirmSend) {
                         btnConfirmSend.style.opacity = '0.5';
                     }
                 } else {
-                    showToast('nao foi possivel encaminhar para o gmail selecionado.', 'error');
+                    showToast(result.error || 'Não foi possível encaminhar o relatório.', 'error');
                 }
             } catch (error) {
-                showToast('nao foi possivel encaminhar para o gmail selecionado.', 'error');
+                console.error('Erro ao enviar relatório:', error);
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    showToast('Erro de conexão com o servidor', 'error');
+                } else {
+                    showToast('Erro interno ao enviar relatório.', 'error');
+                }
             }
         }, 2500);
     });

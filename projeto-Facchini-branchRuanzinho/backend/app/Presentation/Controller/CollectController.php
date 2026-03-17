@@ -36,8 +36,19 @@ class CollectController
 
     public function collectItem(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            $this->jsonResponse(['error' => 'Corpo da requisição inválido. JSON malformado.'], 400);
+            return;
+        }
+
         $code = trim($data['code'] ?? '');
+        if (empty($code)) {
+            $this->jsonResponse(['error' => 'O código é obrigatório.'], 400);
+            return;
+        }
 
         try {
             $item = $this->collectService->execute($code);
@@ -58,7 +69,14 @@ class CollectController
     
     public function receiveItem(string $code): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            $this->jsonResponse(['error' => 'Corpo da requisição inválido. JSON malformado.'], 400);
+            return;
+        }
+
         $observation = trim($data['observation'] ?? '');
         
         try {
@@ -73,7 +91,14 @@ class CollectController
 
     public function sendReport(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            $this->jsonResponse(['error' => 'Corpo da requisição inválido. JSON malformado.'], 400);
+            return;
+        }
+
         $destination = trim($data['destination'] ?? 'Destino Não Informado');
         $email = trim($data['email'] ?? 'arthur.t.carvalho@aluno.senai.br');
 

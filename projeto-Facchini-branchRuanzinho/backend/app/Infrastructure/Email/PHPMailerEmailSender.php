@@ -48,7 +48,7 @@ class PHPMailerEmailSender implements EmailSender
             $mail->send();
         }
         catch (Exception $e) {
-            throw new \Exception("Falha ao enviar e-mail: {$mail->ErrorInfo}");
+            throw new \Exception("Falha ao enviar e-mail. Verifique as configurações de SMTP no arquivo .env. Detalhe: {$mail->ErrorInfo}");
         }
     }
 }

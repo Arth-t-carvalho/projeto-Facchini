@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fachini - Histórico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="frontend/css/style.css?v=2">
+    <style>
+        .page-enter {
+            animation: pageSlideIn 0.4s ease-out forwards;
+        }
+
+        @keyframes pageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container page-enter" style="opacity: 1;">
+        <!-- Header -->
+        <header class="header">
+            <i data-lucide="truck" width="24" height="24" class="header-icon-left"></i>
+            <span class="logo-text">Histórico</span>
+            <button id="btnMenu" class="header-icon-right"
+                style="background:none; border:none; color:inherit; cursor:pointer; padding:0; display:flex; align-items:center;">
+                <i data-lucide="menu" width="24" height="24"></i>
+            </button>
+        </header>
+
+        <!-- Sidebar Overlay -->
+        <div id="sidebarOverlay"
+            style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:900;opacity:0;visibility:hidden;transition:all .3s ease;">
+        </div>
+
+        <!-- Sidebar -->
+        <nav id="sidebar"
+            style="position:fixed;top:0;right:-270px;width:260px;height:100%;background:#fff;z-index:950;display:flex;flex-direction:column;box-shadow:-5px 0 25px rgba(0,0,0,0.12);transition:right .3s cubic-bezier(.4,0,.2,1);">
+            <div
+                style="background:#D32F2F;color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:17px;font-weight:700;letter-spacing:.5px;">Menu</span>
+                <button id="btnCloseSidebar"
+                    style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                    <i data-lucide="x" width="20" height="20"></i>
+                </button>
+            </div>
+            <ul style="list-style:none;flex:1;padding:10px 0;margin:0;">
+                <li>
+                    <a href="index.html?from=sidebar"
+                        style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#333;text-decoration:none;font-size:15px;font-weight:500;border-left:3px solid transparent;">
+                        <i data-lucide="scan-line" width="20" height="20"></i>
+                        <span>Leitor QR</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="historico.html"
+                        style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#D32F2F;text-decoration:none;font-size:15px;font-weight:600;background:#fbe9e7;border-left:3px solid #D32F2F;">
+                        <i data-lucide="history" width="20" height="20"></i>
+                        <span>Histórico</span>
+                    </a>
+                </li>
+            </ul>
+            <div style="padding:14px 22px;border-top:1px solid #e0e0e0;color:#999;font-size:11px;text-align:center;">
+                FachiniLOG v1.0
+            </div>
+        </nav>
+
+        <!-- Conteúdo Histórico -->
+        <div class="list-section">
+            <ul class="data-list" id="dataList" style="list-style:none; padding:0; margin:0;">
+                <div class="empty-state" id="emptyState">
+                    <i data-lucide="history" width="48" height="48" stroke-width="1.5"></i>
+                    <p>O histórico está vazio.<br>Nenhuma atividade recente encontrada.</p>
+                </div>
+            </ul>
+        </div>
+
+        <!-- Modal de Confirmação (Excluir Item Individual) -->
+        <div class="modal-overlay" id="deleteConfirmModal">
+            <div class="confirm-box">
+                <div class="confirm-icon" style="color: var(--danger);">
+                    <i data-lucide="trash-2" width="48" height="48"></i>
+                </div>
+                <h3 class="confirm-title">Excluir Item?</h3>
+                <p class="confirm-text">Tem certeza que deseja excluir esse item da lista?</p>
+                <div class="confirm-actions">
+                    <button class="btn btn-secondary" id="btnCancelDelete"
+                        style="background: var(--text-muted); padding: 12px; border: none; border-radius: 8px; color: #fff; cursor: pointer; flex: 1;">Cancelar</button>
+                    <button class="btn btn-primary" id="btnConfirmDelete"
+                        style="background-color: var(--danger); box-shadow: none; padding: 12px; border: none; border-radius: 8px; color: #fff; cursor: pointer; flex: 1;">Sim,
+                        Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="frontend/js/app.js?v=2"></script>
+</body>
+
+</html>

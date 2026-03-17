@@ -31,22 +31,14 @@ const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 const btnCloseSidebar = document.getElementById('btnCloseSidebar');
 
-// Elementos do Modal de Exclusão Individual
-const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-const btnCancelDelete = document.getElementById('btnCancelDelete');
-const btnConfirmDelete = document.getElementById('btnConfirmDelete');
-
-// Elementos do Modal de Chegada (Receive)
-const receiveConfirmModal = document.getElementById('receiveConfirmModal');
-const btnCancelReceive = document.getElementById('btnCancelReceive');
-const btnConfirmReceive = document.getElementById('btnConfirmReceive');
-const receiveCodeDisplay = document.getElementById('receiveCodeDisplay');
-const receiveObservation = document.getElementById('receiveObservation');
+// Elementos do Modal de Confirmação (Limpar Tudo)
+const confirmModal = document.getElementById('confirmModal');
+const btnCancelClear = document.getElementById('btnCancelClear');
+const btnConfirmClear = document.getElementById('btnConfirmClear');
 
 let html5QrCode = null;
 let currentFacingMode = "environment";
 let itemToDelete = null;
-let itemToReceiveCode = null;
 
 // Função para mostrar notificação rápida
 function showToast(message, type = 'success') {
@@ -77,7 +69,7 @@ async function loadItems() {
         renderList(items);
     } catch (error) {
         console.error('Erro ao carregar itens:', error);
-        showToast('Erro ao carregar dados do servidor', 'error');
+        // showToast('Erro ao carregar dados do servidor', 'error');
     }
 }
 
@@ -89,34 +81,17 @@ function renderList(items) {
 
     if (items.length === 0) {
         if (emptyState) emptyState.style.display = 'flex';
-        if (btnSendEmail) {
-            btnSendEmail.disabled = true;
-            btnSendEmail.style.opacity = '0.5';
-        }
     } else {
         if (emptyState) emptyState.style.display = 'none';
-        if (btnSendEmail) {
-            btnSendEmail.disabled = false;
-            btnSendEmail.style.opacity = '1';
-        }
 
         items.forEach(item => {
             const li = document.createElement('li');
-            // Adding status class for css color indication
-            li.className = `data-item status-${item.status}`;
-            
-            // Format time based on status
-            let timeStr = formatDateTime(item.created_at);
-            let statusStr = `<span style="color: #28a745; font-weight: 600; font-size: 11px;">(Origem)</span>`;
-            if (item.status === 2) {
-                timeStr = formatDateTime(item.sent_at);
-                statusStr = `<span style="color: #ffc107; font-weight: 600; font-size: 11px;">(Em Trânsito: ${item.destination})</span>`;
-            }
+            li.className = `data-item`;
             
             li.innerHTML = `
                 <div class="item-info">
-                    <span class="item-code">${item.code}</span>
-                    <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${timeStr} ${statusStr}</span>
+                    <span class="item-code" style="font-weight: 700; color: var(--fachini-blue);">${item.code}</span>
+                    <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${formatDateTime(item.created_at)}</span>
                 </div>
                 <button class="btn-delete-item" onclick="deleteItemById(${item.id})" title="Remover item">
                     <i data-lucide="trash-2" width="16" height="16"></i>
@@ -130,7 +105,6 @@ function renderList(items) {
     }
 }
 
-// Função global para deletar item por ID
 // Função global para abrir o modal de exclusão
 window.deleteItemById = function (id) {
     itemToDelete = id;
@@ -195,21 +169,6 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
             showToast('Código registrado!');
             if (input) input.value = '';
             loadItems();
-        } else if (response.status === 428) {
-            // Signal from backend that item is in transit and needs manual receipt at destination
-            itemToReceiveCode = result.code || code.trim();
-            if (receiveCodeDisplay) receiveCodeDisplay.textContent = itemToReceiveCode;
-            if (receiveObservation) receiveObservation.value = '';
-            if (receiveConfirmModal) {
-                receiveConfirmModal.style.display = 'flex';
-                lucide.createIcons();
-            }
-            if(html5QrCode && html5QrCode.isScanning) {
-                await stopCamera(); // Stop camera specifically when model is open
-            }
-            
-            if (input) input.value = '';
-            showToast('Item em trânsito. Necessário confirmação.', 'warning');
         } else {
             showToast(result.error || 'Erro ao registrar', 'error');
             if (input) input.value = '';
@@ -220,63 +179,7 @@ async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
     }
 }
 
-// Lógica de Cancelamento da Recepção
-if (btnCancelReceive) {
-    btnCancelReceive.addEventListener('click', () => {
-        if (receiveConfirmModal) {
-            receiveConfirmModal.style.display = 'none';
-        }
-        itemToReceiveCode = null;
-    });
-}
-
-// Lógica de Confirmação da Recepção
-if (btnConfirmReceive) {
-    btnConfirmReceive.addEventListener('click', async () => {
-        if (!itemToReceiveCode) return;
-        const obs = receiveObservation ? receiveObservation.value.trim() : '';
-
-        if (!obs) {
-            showToast('A observação é obrigatória.', 'error');
-            return;
-        }
-
-        const ogText = btnConfirmReceive.innerHTML;
-        btnConfirmReceive.innerHTML = 'Processando...';
-        btnConfirmReceive.disabled = true;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/items/${encodeURIComponent(itemToReceiveCode)}/receive`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ observation: obs })
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showToast('Chegada confirmada com sucesso!');
-                if (receiveConfirmModal) receiveConfirmModal.style.display = 'none';
-                itemToReceiveCode = null;
-                loadItems(); // Refresh the list
-            } else {
-                showToast(result.error || 'Erro ao receber item.', 'error');
-            }
-        } catch (error) {
-            console.error('Erro na recepção do item:', error);
-            showToast('Erro de conexão ao receber.', 'error');
-        } finally {
-            btnConfirmReceive.innerHTML = ogText;
-            btnConfirmReceive.disabled = false;
-            btnConfirmReceive.style.opacity = '1';
-        }
-    });
-}
-
-
-
-// Função global para submissão de formulários (como solicitado pelo usuário)
+// Função global para submissão de formulários
 window.submitForm = async (event) => {
     event.preventDefault();
     const form = event.target;
@@ -287,417 +190,6 @@ window.submitForm = async (event) => {
         if (code) await addCode(code, actionUrl);
     }
 };
-
-// --- Lógica da Câmera (html5-qrcode) ---
-async function startCamera() {
-    // Limpa instância anterior se existir
-    if (html5QrCode) {
-        try {
-            if (html5QrCode.isScanning) {
-                await html5QrCode.stop();
-            }
-        } catch (e) {
-            console.warn("Erro ao parar câmera anterior:", e);
-        }
-        try {
-            html5QrCode.clear();
-        } catch (e) {
-            // clear() pode falhar se o DOM foi alterado, ignorar
-        }
-        html5QrCode = null;
-    }
-
-    // Garante que o container reader está limpo
-    const readerEl = document.getElementById('reader');
-    if (readerEl) readerEl.innerHTML = '';
-
-    html5QrCode = new Html5Qrcode("reader");
-
-    const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        disableFlip: false
-    };
-
-    const onSuccess = (decodedText) => {
-        console.log("Código lido:", decodedText);
-        if (navigator.vibrate) navigator.vibrate(200);
-        const scanned = (decodedText || '').trim();
-
-        addCode(scanned);
-        closeCamera();
-    };
-
-    const onError = () => { /* Silenciar erros de busca */ };
-
-    // Tentativa 1: Usar facingMode
-    try {
-        await html5QrCode.start(
-            { facingMode: currentFacingMode },
-            config,
-            onSuccess,
-            onError
-        );
-        return;
-    } catch (err) {
-        console.warn("facingMode falhou, tentando listar câmeras...", err);
-    }
-
-    // Tentativa 2: Listar câmeras disponíveis
-    try {
-        const cameras = await Html5Qrcode.getCameras();
-        if (cameras && cameras.length > 0) {
-            let cameraId = cameras[0].id;
-            for (const cam of cameras) {
-                if (cam.label && (cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('traseira') || cam.label.toLowerCase().includes('rear'))) {
-                    cameraId = cam.id;
-                    break;
-                }
-            }
-            await html5QrCode.start(
-                cameraId,
-                config,
-                onSuccess,
-                onError
-            );
-        } else {
-            showToast("Nenhuma câmera encontrada", "error");
-        }
-    } catch (err2) {
-        console.error("Erro ao acessar câmera:", err2);
-        showToast("Erro ao acessar câmera. Verifique as permissões.", "error");
-    }
-}
-
-async function stopCamera() {
-    if (html5QrCode && html5QrCode.isScanning) {
-        try {
-            await html5QrCode.stop();
-        } catch (err) {
-            console.error("Erro ao parar câmera:", err);
-        }
-    }
-}
-
-function closeCamera() {
-    if (cameraModal) cameraModal.style.display = 'none';
-    stopCamera();
-}
-
-// Evento: Abrir Modal da Câmera
-if (btnSimulateScan) {
-    btnSimulateScan.addEventListener('click', () => {
-        if (cameraModal) cameraModal.style.display = 'flex';
-        startCamera();
-        lucide.createIcons();
-    });
-}
-
-// Evento: Fechar Modal da Câmera
-if (btnCloseCamera) btnCloseCamera.addEventListener('click', closeCamera);
-
-// Evento: Alternar Câmera
-if (btnSwitchCamera) {
-    btnSwitchCamera.addEventListener('click', async () => {
-        currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-        await stopCamera();
-        startCamera();
-    });
-}
-
-
-// --- Lógica da Sidebar ---
-function openSidebar() {
-    if (sidebar && sidebarOverlay) {
-        sidebar.style.right = '0';
-        sidebarOverlay.style.visibility = 'visible';
-        sidebarOverlay.style.opacity = '1';
-        // Removido lucide.createIcons() daqui para evitar substituição de elementos estáveis
-    }
-}
-
-function closeSidebar() {
-    if (sidebar && sidebarOverlay) {
-        sidebar.style.right = '-270px';
-        sidebarOverlay.style.opacity = '0';
-        setTimeout(() => {
-            if (sidebarOverlay.style.opacity === '0') {
-                sidebarOverlay.style.visibility = 'hidden';
-            }
-        }, 300);
-    }
-}
-
-if (btnMenu) btnMenu.addEventListener('click', openSidebar);
-if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
-if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
-
-// Elementos do Modal de Confirmação
-const confirmModal = document.getElementById('confirmModal');
-const btnCancelClear = document.getElementById('btnCancelClear');
-const btnConfirmClear = document.getElementById('btnConfirmClear');
-const modalItemCount = document.getElementById('modalItemCount');
-
-// Ação ao clicar no botão principal "Limpar Tudo"
-if (btnClearAll) {
-    btnClearAll.addEventListener('click', () => {
-        const currentCount = parseInt(itemCount.textContent) || 0;
-        const modalTitle = document.getElementById('confirmModalTitle');
-        const modalText = document.getElementById('confirmModalText');
-        const modalIconContainer = document.getElementById('confirmModalIconContainer');
-        const btnConfirm = document.getElementById('btnConfirmClear');
-        const btnCancel = document.getElementById('btnCancelClear');
-
-        if (currentCount === 0) {
-            // Modo Aviso: Lista Vazia
-            if (modalTitle) modalTitle.textContent = 'Lista Vazia';
-            if (modalText) modalText.innerHTML = 'Não existem itens na lista para excluir.';
-            if (modalIconContainer) modalIconContainer.innerHTML = '<i data-lucide="info" width="48" height="48" style="color: var(--fachini-orange);"></i>';
-            if (btnConfirm) btnConfirm.style.display = 'none';
-            if (btnCancel) btnCancel.textContent = 'Entendido';
-        } else {
-            // Modo Confirmação: Original
-            if (modalTitle) modalTitle.textContent = 'Limpar Tudo?';
-            if (modalText) {
-                modalText.innerHTML = `Existem <strong id="modalItemCount" style="color: var(--fachini-blue);">${currentCount}</strong> itens na lista.<br>Tem certeza que deseja apagar tudo? Esta ação não pode ser desfeita.`;
-            }
-            if (modalIconContainer) modalIconContainer.innerHTML = '<i data-lucide="trash-2" width="48" height="48"></i>';
-            if (btnConfirm) btnConfirm.style.display = 'block';
-            if (btnCancel) btnCancel.textContent = 'Cancelar';
-        }
-
-        if (confirmModal) confirmModal.style.display = 'flex';
-        lucide.createIcons();
-    });
-}
-
-// Ação do botão "Cancelar" dentro do modal
-if (btnCancelClear) {
-    btnCancelClear.addEventListener('click', () => {
-        if (confirmModal) confirmModal.style.display = 'none'; // Apenas fecha sem fazer nada
-    });
-}
-
-// Ação do botão "Continuar" dentro do modal (Limpeza Real)
-if (btnConfirmClear) {
-    btnConfirmClear.addEventListener('click', async () => {
-        if (confirmModal) confirmModal.style.display = 'none'; // Fecha o modal
-        try {
-            const response = await fetch(`${API_BASE_URL}/items`, { method: 'DELETE' });
-            if (response.ok) {
-                showToast('Lista limpa com sucesso!');
-                loadItems(); // Recarrega a lista vazia
-            } else {
-                showToast('Erro ao limpar lista', 'error');
-            }
-        } catch (error) {
-            showToast('Erro ao conectar', 'error');
-        }
-    });
-}
-
-// --- Dados das Filiais Fachini ---
-// ABAIXO VOCÊ PODE ALTERAR O E-MAIL DE CADA FILIAL. 
-// Certifique-se de manter o formato { name: '...', location: '...', state: '...', email: '...' }
-const branches = [
-    { name: 'Votuporanga – SP (Sede)', location: 'Votuporanga, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José do Rio Preto – SP', location: 'São José do Rio Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Mirassol – SP', location: 'Mirassol, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cosmorama – SP', location: 'Cosmorama, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Coroados – SP', location: 'Coroados, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Ribeirão Preto – SP', location: 'Ribeirão Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Guararema – SP', location: 'Guararema, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Guarulhos – SP', location: 'Guarulhos, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Anápolis – GO', location: 'Anápolis, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Rio Verde – GO', location: 'Rio Verde, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cuiabá – MT', location: 'Cuiabá, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Rondonópolis – MT', location: 'Rondonópolis, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Campo Grande – MS', location: 'Campo Grande, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Ribas do Rio Pardo – MS', location: 'Ribas do Rio Pardo, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Chapecó – SC', location: 'Chapecó, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Penha – SC', location: 'Penha, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Içara – SC', location: 'Içara, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José dos Pinhais – PR', location: 'São José dos Pinhais, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cambé – PR', location: 'Cambé, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Nova Santa Rita – RS', location: 'Nova Santa Rita, RS', state: 'RS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Imperatriz – MA', location: 'Imperatriz, MA', state: 'MA', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José de Mipibu – RN', location: 'São José de Mipibu, RN', state: 'RN', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cabo de Santo Agostinho – PE', location: 'Cabo de Santo Agostinho, PE', state: 'PE', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Luís Eduardo Magalhães – BA', location: 'Luís Eduardo Magalhães, BA', state: 'BA', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Palmas – TO', location: 'Palmas, TO', state: 'TO', email: 'arthur.t.carvalho@aluno.senai.br' }
-];
-
-// Elementos dos Modais de Destino
-const destinationModal = document.getElementById('destinationModal');
-const branchSelectionModal = document.getElementById('branchSelectionModal');
-const fieldSelectBranch = document.getElementById('fieldSelectBranch');
-const destinationInput = document.getElementById('destinationInput');
-const btnConfirmSend = document.getElementById('btnConfirmSend');
-const btnCancelSend = document.getElementById('btnCancelSend');
-const btnCloseBranchSelection = document.getElementById('btnCloseBranchSelection');
-const branchListContainer = document.getElementById('branchList');
-const filterStatesContainer = document.getElementById('filterStates');
-const branchSearch = document.getElementById('branchSearch');
-
-let selectedState = null;
-
-// Função para renderizar filtros de estado
-function renderFilterStates() {
-    if (!filterStatesContainer) return;
-    const states = [...new Set(branches.map(b => b.state))].sort();
-    filterStatesContainer.innerHTML = `<span class="filter-chip ${!selectedState ? 'active' : ''}" onclick="filterByState(null)">Todos</span>`;
-    states.forEach(state => {
-        filterStatesContainer.innerHTML += `<span class="filter-chip ${selectedState === state ? 'active' : ''}" onclick="filterByState('${state}')">${state}</span>`;
-    });
-}
-
-// Global para fácil acesso via onclick inline (estratégia rápida)
-window.filterByState = (state) => {
-    selectedState = state;
-    renderFilterStates();
-    renderBranchList();
-};
-
-let selectedBranchEmail = null;
-
-window.selectBranch = (branchName) => {
-    const branch = branches.find(b => b.name === branchName);
-    destinationInput.value = branchName;
-    selectedBranchEmail = branch ? branch.email : null;
-
-    btnConfirmSend.disabled = false;
-    btnConfirmSend.style.opacity = '1';
-    branchSelectionModal.style.display = 'none';
-};
-
-// Função para renderizar lista de filiais
-function renderBranchList() {
-    if (!branchListContainer) return;
-    const searchTerm = branchSearch.value.toLowerCase();
-    const filtered = branches.filter(b => {
-        const matchesState = !selectedState || b.state === selectedState;
-        const matchesSearch = b.name.toLowerCase().includes(searchTerm) || b.location.toLowerCase().includes(searchTerm);
-        return matchesState && matchesSearch;
-    });
-
-    branchListContainer.innerHTML = '';
-    filtered.forEach(branch => {
-        const div = document.createElement('div');
-        div.className = 'branch-item';
-        div.onclick = () => selectBranch(branch.name);
-        div.innerHTML = `
-            <span class="branch-name">${branch.name}</span>
-            <span class="branch-location"><i data-lucide="map-pin" width="12" height="12"></i> ${branch.location}</span>
-        `;
-        branchListContainer.appendChild(div);
-    });
-    lucide.createIcons();
-}
-
-// Eventos de Navegação dos Modais
-if (btnSendEmail) {
-    btnSendEmail.addEventListener('click', () => {
-        if (destinationModal) destinationModal.style.display = 'flex';
-        lucide.createIcons();
-    });
-}
-
-if (fieldSelectBranch) {
-    fieldSelectBranch.addEventListener('click', () => {
-        if (branchSelectionModal) branchSelectionModal.style.display = 'flex';
-        renderFilterStates();
-        renderBranchList();
-    });
-}
-
-if (btnCloseBranchSelection) {
-    btnCloseBranchSelection.addEventListener('click', () => {
-        if (branchSelectionModal) branchSelectionModal.style.display = 'none';
-    });
-}
-
-if (btnCancelSend) {
-    btnCancelSend.addEventListener('click', () => {
-        if (destinationModal) destinationModal.style.display = 'none';
-        if (destinationInput) destinationInput.value = '';
-        if (btnConfirmSend) {
-            btnConfirmSend.disabled = true;
-            btnConfirmSend.style.opacity = '0.6';
-        }
-    });
-}
-
-if (branchSearch) {
-    branchSearch.addEventListener('input', renderBranchList);
-}
-
-// --- Lógica Final de Envio com Animação ---
-if (btnConfirmSend) {
-    btnConfirmSend.addEventListener('click', async () => {
-        if (destinationModal) destinationModal.style.display = 'none';
-
-        // Iniciar Animação do Caminhão
-        const truckIcon = document.querySelector('.truck-wrapper');
-        const logoText = document.querySelector('.logo-text');
-
-        if (truckIcon && logoText) {
-            const header = truckIcon.closest('.header');
-            const headerWidth = header ? header.clientWidth : window.innerWidth;
-            const stopDistance = headerWidth - 100;
-
-            truckIcon.style.setProperty('--drive-dist', `${stopDistance}px`);
-            truckIcon.classList.add('truck-driving');
-            logoText.classList.add('hide-logo');
-        }
-
-        showToast('Finalizando e enviando...', 'success');
-
-        // Aguarda a animação e depois faz reset + envia
-        setTimeout(async () => {
-            // Reset suave se os elementos existirem
-            if (truckIcon && logoText) {
-                truckIcon.classList.remove('truck-driving');
-                truckIcon.style.transition = 'none';
-                truckIcon.style.transform = 'translateX(0)';
-                truckIcon.style.opacity = '1';
-                void truckIcon.offsetWidth;
-                truckIcon.style.transition = '';
-
-                logoText.classList.remove('hide-logo');
-                logoText.style.clipPath = 'inset(0 0 0 0)';
-                logoText.style.opacity = '1';
-            }
-
-            // Processar Envio Real
-            try {
-                const dest = destinationInput ? destinationInput.value : '';
-                const response = await fetch(`${API_BASE_URL}/report`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        destination: dest,
-                        email: selectedBranchEmail
-                    })
-                });
-
-                if (response.ok) {
-                    showToast('Relatório enviado com sucesso!');
-                    loadItems();
-                    if (destinationInput) destinationInput.value = '';
-                    if (btnConfirmSend) {
-                        btnConfirmSend.disabled = true;
-                        btnConfirmSend.style.opacity = '0.5';
-                    }
-                } else {
-                    showToast('nao foi possivel encaminhar para o gmail selecionado.', 'error');
-                }
-            } catch (error) {
-                showToast('nao foi possivel encaminhar para o gmail selecionado.', 'error');
-            }
-        }, 2500);
-    });
-}
 
 // Inicialização
 loadItems();
@@ -871,3 +363,98 @@ if (btnEnterApp && splashScreen && appContainer) {
     }
 }
 
+// --- Lógica da Câmera (html5-qrcode) ---
+async function startCamera() {
+    if (html5QrCode) {
+        try {
+            if (html5QrCode.isScanning) await html5QrCode.stop();
+        } catch (e) {}
+        try { html5QrCode.clear(); } catch (e) {}
+        html5QrCode = null;
+    }
+
+    const readerEl = document.getElementById('reader');
+    if (readerEl) readerEl.innerHTML = '';
+
+    html5QrCode = new Html5Qrcode("reader");
+
+    const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false
+    };
+
+    const onSuccess = (decodedText) => {
+        if (navigator.vibrate) navigator.vibrate(200);
+        addCode((decodedText || '').trim());
+        closeCamera();
+    };
+
+    const onError = () => { /* Silenciar */ };
+
+    try {
+        await html5QrCode.start({ facingMode: currentFacingMode }, config, onSuccess, onError);
+    } catch (err) {
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+                await html5QrCode.start(cameras[0].id, config, onSuccess, onError);
+            }
+        } catch (err2) {
+            showToast("Erro ao acessar câmera", "error");
+        }
+    }
+}
+
+async function stopCamera() {
+    if (html5QrCode && html5QrCode.isScanning) {
+        try { await html5QrCode.stop(); } catch (err) {}
+    }
+}
+
+function closeCamera() {
+    if (cameraModal) cameraModal.style.display = 'none';
+    stopCamera();
+}
+
+if (btnSimulateScan) {
+    btnSimulateScan.addEventListener('click', () => {
+        if (cameraModal) cameraModal.style.display = 'flex';
+        startCamera();
+        lucide.createIcons();
+    });
+}
+if (btnCloseCamera) btnCloseCamera.addEventListener('click', closeCamera);
+if (btnSwitchCamera) {
+    btnSwitchCamera.addEventListener('click', async () => {
+        currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+        await stopCamera();
+        startCamera();
+    });
+}
+
+// --- Lógica da Sidebar ---
+function openSidebar() {
+    if (sidebar && sidebarOverlay) {
+        sidebar.style.right = '0';
+        sidebarOverlay.style.visibility = 'visible';
+        sidebarOverlay.style.opacity = '1';
+    }
+}
+
+function closeSidebar() {
+    if (sidebar && sidebarOverlay) {
+        sidebar.style.right = '-270px';
+        sidebarOverlay.style.opacity = '0';
+        setTimeout(() => {
+            if (sidebarOverlay.style.opacity === '0') {
+                sidebarOverlay.style.visibility = 'hidden';
+            }
+        }, 300);
+    }
+}
+
+if (btnMenu) btnMenu.addEventListener('click', openSidebar);
+if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
+if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);

@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -9,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <link rel="stylesheet" href="/projeto-Facchini/frontend/css/style.css">
+    <link rel="stylesheet" href="projeto-Facchini-branchRuanzinho/frontend/css/style.css?v=2">
 </head>
 
 <body>
@@ -22,13 +21,13 @@
         <div class="carousel-container">
             <div class="carousel-track">
                 <div class="carousel-item prev" data-index="0">
-                    <img src="/projeto-Facchini/frontend/assets/carousel/img1.png" alt="Facchini 1">
+                    <img src="projeto-Facchini-branchRuanzinho/frontend/assets/carousel/img1.png" alt="Facchini 1">
                 </div>
                 <div class="carousel-item active" data-index="1">
-                    <img src="/projeto-Facchini/frontend/assets/carousel/img2.png" alt="Facchini 2">
+                    <img src="projeto-Facchini-branchRuanzinho/frontend/assets/carousel/img2.png" alt="Facchini 2">
                 </div>
                 <div class="carousel-item next" data-index="2">
-                    <img src="/projeto-Facchini/frontend/assets/carousel/img3.png" alt="Facchini 3">
+                    <img src="projeto-Facchini-branchRuanzinho/frontend/assets/carousel/img3.png" alt="Facchini 3">
                 </div>
             </div>
         </div>
@@ -98,6 +97,7 @@
                     <input type="text" id="codeInput" name="code" placeholder="Aguardar leitura..." autocomplete="off">
                     <i data-lucide="qr-code" width="20" height="20" class="input-icon"></i>
                 </div>
+                <!-- Botão para simular leitura pela câmera -->
                 <button type="button" class="btn-scan" id="btnSimulateScan" title="Simular Câmara">
                     <i data-lucide="camera" width="20" height="20"></i>
                 </button>
@@ -122,9 +122,12 @@
             </div>
         </div>
 
-        <!-- Ações -->
+        <!-- Ações (E-mail e Limpar) -->
         <div class="action-section">
-            <button class="btn btn-secondary" id="btnClearAll" style="width: 100%;">
+            <button class="btn btn-primary" id="btnSendEmail">
+                <i data-lucide="mail" width="20" height="20"></i> Finalizar e Enviar
+            </button>
+            <button class="btn btn-secondary" id="btnClearAll">
                 <i data-lucide="trash-2" width="20" height="20"></i> Limpar Tudo
             </button>
         </div>
@@ -154,15 +157,22 @@
         <div class="modal-overlay" id="confirmModal">
             <div class="confirm-box">
                 <div class="confirm-icon" id="confirmModalIconContainer">
+                    <!-- Ícone de lixeira da Lucide -->
                     <i data-lucide="trash-2" width="48" height="48"></i>
                 </div>
                 <h3 class="confirm-title" id="confirmModalTitle" style="font-size: 20px; font-weight: 700;">Limpar Tudo?</h3>
                 <p class="confirm-text" id="confirmModalText">
-                    Esta ação removerá todos os itens da lista e não pode ser desfeita.
+                    Existem <strong id="modalItemCount" style="color: var(--fachini-blue);">0</strong> itens na
+                    lista.<br>
+                    Tem certeza que deseja apagar tudo? Esta ação não pode ser desfeita.
                 </p>
                 <div class="confirm-actions">
-                    <button class="btn" id="btnCancelClear" style="background: transparent; color: var(--text-muted); font-weight: 600;">Cancelar</button>
-                    <button class="btn btn-secondary" id="btnConfirmClear" style="background: var(--fachini-blue); border-radius: 12px;">Limpar</button>
+                    <!-- Botão Cancelar -->
+                    <button class="btn" id="btnCancelClear"
+                        style="background: transparent; color: var(--text-muted); font-weight: 600;">Cancelar</button>
+                    <!-- Botão Continuar -->
+                    <button class="btn btn-secondary" id="btnConfirmClear"
+                        style="background: var(--fachini-blue); border-radius: 12px;">Continuar</button>
                 </div>
             </div>
         </div>
@@ -176,12 +186,103 @@
                 <h3 class="confirm-title">Excluir Item?</h3>
                 <p class="confirm-text">Tem certeza que deseja excluir esse item da lista?</p>
                 <div class="confirm-actions">
-                    <button class="btn btn-secondary" id="btnCancelDelete" style="background: var(--text-muted);">Cancelar</button>
-                    <button class="btn btn-primary" id="btnConfirmDelete" style="background-color: var(--danger); box-shadow: none;">Excluir</button>
+                    <button class="btn btn-secondary" id="btnCancelDelete"
+                        style="background: var(--text-muted);">Cancelar</button>
+                    <button class="btn btn-primary" id="btnConfirmDelete"
+                        style="background-color: var(--danger); box-shadow: none;">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+        <!-- Modal de Destino (Passo 1) -->
+        <div class="modal-overlay" id="destinationModal">
+            <div class="confirm-box">
+                <div>
+                    <div
+                        style="width: 56px; height: 56px; background: linear-gradient(135deg, #FF5722, #FF9800); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                        <i data-lucide="truck" width="28" height="28" style="color: white;"></i>
+                    </div>
+                    <h3 class="confirm-title" style="font-size: 20px; font-weight: 700;">Finalizar Coleta</h3>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Selecione o destino antes de
+                        enviar</p>
+                </div>
+
+                <div id="fieldSelectBranch"
+                    style="cursor: pointer; position: relative; border: 2px solid #eee; border-radius: 14px; padding: 14px 48px 14px 16px; background: #fafafa; transition: all 0.2s; text-align: left;">
+                    <input type="text" id="destinationInput" placeholder="Toque para selecionar destino" readonly
+                        style="cursor: pointer; background: transparent; border: none; outline: none; width: 100%; font-size: 14px; font-weight: 600; color: var(--text-dark);">
+                    <i data-lucide="map-pin" width="20" height="20"
+                        style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--fachini-orange);"></i>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" id="btnConfirmSend" disabled
+                        style="width: 100%; opacity: 0.5; border-radius: 14px; padding: 13px;">
+                        <i data-lucide="send" width="18" height="18"></i> Confirmar e Enviar
+                    </button>
+                    <button class="btn" id="btnCancelSend"
+                        style="width: 100%; background: transparent; color: var(--text-muted); font-weight: 600; border: none; padding: 10px;">
+                        Cancelar
+                    </button>
                 </div>
             </div>
         </div>
 
-        <script src="projeto-Facchini/js/app.js?v=6"></script>
+        <!-- Modal de Seleção de Filial (Passo 2) -->
+        <div class="modal-overlay" id="branchSelectionModal" style="z-index: 1010;">
+            <div class="confirm-box" style="padding: 0; overflow: hidden; max-height: 80vh;">
+                <div
+                    style="background: linear-gradient(135deg, var(--fachini-blue), #B71C1C); color: white; padding: 20px 20px 14px; text-align: left;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <span style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="map-pin" width="20" height="20"></i> Selecionar Filial
+                        </span>
+                        <button id="btnCloseBranchSelection"
+                            style="background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="x" width="18" height="18"></i>
+                        </button>
+                    </div>
+                    <div style="position: relative;">
+                        <input type="text" id="branchSearch" placeholder="Buscar unidade..."
+                            style="width: 100%; padding: 10px 14px 10px 36px; border-radius: 10px; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 13px; outline: none;">
+                        <i data-lucide="search" width="16" height="16"
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7);"></i>
+                    </div>
+                </div>
+                <div id="filterStates" class="filter-states"
+                    style="padding: 12px 16px 8px; background: #f8f8f8; border-bottom: 1px solid #eee;">
+                </div>
+                <div id="branchList" style="max-height: 350px; overflow-y: auto; padding: 4px 0;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Recepção de Produto (Status 3 - Vermelho) -->
+        <div class="modal-overlay" id="receiveConfirmModal" style="z-index: 1020;">
+            <div class="confirm-box" style="gap: 12px;">
+                <div class="confirm-icon" style="color: var(--danger); margin: 0 auto;">
+                    <i data-lucide="package-check" width="56" height="56"></i>
+                </div>
+                <h3 class="confirm-title" style="font-size: 20px; font-weight: 700; color: var(--danger);">Confirmar Chegada</h3>
+                <p class="confirm-text" style="font-size: 13px; line-height: 1.4;">
+                    O produto <strong id="receiveCodeDisplay" style="color: var(--text-dark); background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">---</strong> chegou ao destino final.
+                </p>
+                <button type="button" class="btn-receive-rescan" id="btnRescanReceive" title="Escanear novamente para confirmar">
+                    <i data-lucide="qr-code" width="18" height="18"></i> Escanear novamente
+                </button>
+                <div style="width: 100%; text-align: left; margin-top: 8px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block;">Observação (Obrigatório):</label>
+                    <textarea id="receiveObservation" class="receive-modal-textarea" rows="3" placeholder="Ex: Produto em perfeitas condições, embalagem intacta..." required></textarea>
+                </div>
+                <div class="confirm-actions" style="margin-top: 10px;">
+                    <button class="btn" id="btnCancelReceive" style="background: transparent; color: var(--text-muted); font-weight: 600;">Cancelar</button>
+                    <button class="btn btn-secondary" id="btnConfirmReceive" style="background: var(--danger); border-radius: 12px;">Confirmar Recebimento</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="projeto-Facchini-branchRuanzinho/frontend/js/app.js?v=4"></script>
+
 </body>
+
 </html>

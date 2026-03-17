@@ -120,6 +120,7 @@ function renderList(items) {
             li.innerHTML = `
                 <div class="item-info">
                     <span class="item-code">${item.code}</span>
+                    <span class="item-type-badge ${item.type}">${item.type === 'qr' ? 'QR Code' : 'Barras'}</span>
                     <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${timeStr} ${statusStr}</span>
                 </div>
                 <button class="btn-delete-item" onclick="deleteItemById(${item.id})" title="Remover item">
@@ -181,9 +182,35 @@ if (btnCancelDelete) {
     });
 }
 
+// Função para detectar tipo de input (QR ou Barcode)
+function detectInputType(code) {
+    const trimmed = code.trim();
+    // Regex para Código de Barras (EAN-13 ou ITF-14 - 13 a 14 dígitos)
+    if (/^\d{13,14}$/.test(trimmed)) {
+        return 'barcode';
+    }
+    // Regex para URL
+    if (/^https?:\/\/\S+$/i.test(trimmed)) {
+        return 'qr';
+    }
+    // Verificação básica de JSON
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        return 'qr';
+    }
+    return 'unknown';
+}
+
 // Adicionar novo código à API
 async function addCode(code, apiUrl = `${API_BASE_URL}/items`) {
-    if (!code.trim()) return;
+    const trimmedCode = code.trim();
+    if (!trimmedCode) return;
+
+    const type = detectInputType(trimmedCode);
+    if (type === 'unknown') {
+        showToast('Formato inválido. Use QR Code (URL/JSON) ou Código de Barras (13-14 dígitos).', 'error');
+        if (input) input.value = '';
+        return;
+    }
 
     try {
         const response = await fetch(apiUrl, {

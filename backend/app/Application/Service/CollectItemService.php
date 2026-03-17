@@ -20,6 +20,15 @@ class CollectItemService
             throw new \InvalidArgumentException("Código inválido.");
         }
 
+        $type = null;
+        if ($this->isBarcode($code)) {
+            $type = 'barcode';
+        } elseif ($this->isQRCode($code)) {
+            $type = 'qr';
+        } else {
+            throw new \InvalidArgumentException("Formato de código não reconhecido (deve ser QR Code ou Código de Barras EAN-13/ITF-14).");
+        }
+
         $existingItem = $this->repository->findByCode($code);
         
         if ($existingItem) {
@@ -35,10 +44,30 @@ class CollectItemService
         }
 
         // New Item
-        $item = new CollectedItem($code);
+        $item = new CollectedItem($code, $type);
         $this->repository->save($item);
 
         return $item;
+    }
+
+    private function isBarcode(string $code): bool
+    {
+        return (bool) preg_match('/^\d{13,14}$/', $code);
+    }
+
+    private function isQRCode(string $code): bool
+    {
+        // URL pattern
+        if (preg_match('/^https?:\/\/\S+$/i', $code)) {
+            return true;
+        }
+        // Basic JSON pattern
+        $trimmed = trim($code);
+        if ((str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) || 
+            (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']'))) {
+            return true;
+        }
+        return false;
     }
     
     public function receiveItem(string $code, string $observation): CollectedItem

@@ -516,6 +516,26 @@ body {
     color: var(--text-muted);
 }
 
+.item-type-badge {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    width: fit-content;
+    color: white;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.item-type-badge.qr {
+    background-color: var(--fachini-blue); /* Na verdade é vermelho no CSS atual */
+}
+
+.item-type-badge.barcode {
+    background-color: var(--fachini-orange);
+}
+
 .btn-delete,
 .btn-delete-item {
     background: none;

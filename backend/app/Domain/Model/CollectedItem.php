@@ -10,6 +10,7 @@ class CollectedItem
 
     private ?int $id;
     private string $code;
+    private string $type; // 'qr' or 'barcode'
     private int $status;
     private ?string $destination;
     private ?string $observation;
@@ -22,6 +23,7 @@ class CollectedItem
 
     public function __construct(
         string $code,
+        string $type = 'barcode',
         ?int $id = null,
         int $status = self::STATUS_ORIGIN,
         ?string $destination = null,
@@ -33,6 +35,7 @@ class CollectedItem
     ) {
         $this->id = $id;
         $this->code = $code;
+        $this->type = $type;
         $this->status = $status;
         $this->destination = $destination;
         $this->observation = $observation;
@@ -80,6 +83,7 @@ class CollectedItem
 
     public function getId(): ?int { return $this->id; }
     public function getCode(): string { return $this->code; }
+    public function getType(): string { return $this->type; }
     public function getStatus(): int { return $this->status; }
     public function getDestination(): ?string { return $this->destination; }
     public function getObservation(): ?string { return $this->observation; }
@@ -93,6 +97,7 @@ class CollectedItem
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'type' => $this->type,
             'status' => $this->status,
             'destination' => $this->destination,
             'observation' => $this->observation,

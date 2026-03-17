@@ -49,7 +49,8 @@ class JsonCollectedItemRepository implements CollectedItemRepository
                 foreach ($data as $row) {
                     $items[] = new CollectedItem(
                         $row['code'],
-                        (int) $row['id'],
+                        $row['type'] ?? 'barcode',
+                        (int) ($row['id'] ?? 0),
                         (int) ($row['status'] ?? 1),
                         $row['destination'] ?? null,
                         $row['observation'] ?? null,

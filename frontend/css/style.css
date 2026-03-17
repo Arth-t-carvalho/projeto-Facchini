@@ -1202,6 +1202,13 @@ body {
 
 /* ---- Filtros e Listas das Filiais ---- */
 .filter-states {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px 16px 8px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #eee;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     /* Firefox */
 }
@@ -1222,6 +1229,7 @@ body {
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .filter-chip.active {
@@ -1312,4 +1320,137 @@ body {
     gap: 15px;
     flex-wrap: wrap;
     justify-content: center;
+}
+
+/* Estilo para o cursor indicar que o código é clicável */
+.item-code {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.item-code:hover {
+    opacity: 0.7;
+}
+
+#previewModal {
+    z-index: 2000;
+}
+
+#previewModal .confirm-box {
+    border-radius: 32px;
+    border: 1px solid rgba(211, 47, 47, 0.15);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+
+#previewModal.show .confirm-box {
+    transform: scale(1);
+    animation: glowModal 2s infinite alternate ease-in-out;
+}
+
+@keyframes glowModal {
+    from { box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3); }
+    to { box-shadow: 0 40px 90px rgba(211, 47, 47, 0.2); }
+}
+
+#fallbackCode {
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    color: var(--fachini-blue);
+    line-height: 1.1;
+    margin-top: 10px;
+}
+
+#fallbackTitle {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Spinner de Carregamento */
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: var(--fachini-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Tabela de Confirmação de Envio */
+.confirm-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.confirm-table th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+}
+
+.confirm-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: var(--text-dark);
+}
+
+.confirm-table tr:last-child td {
+    border-bottom: none;
+}
+
+.confirm-table td strong {
+    font-family: monospace;
+    font-size: 15px;
+}
+
+.btn-expand-img {
+    background: var(--fachini-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    align-self: flex-end; /* Alinha à direita no contêiner flex pai */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.15);
+}
+
+.btn-expand-img:hover {
+    background: var(--fachini-red);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
+}
+
+.confirm-item-text {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 14px;
+    word-break: break-all;
+    display: block;
 }

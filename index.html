@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fachini - Coleta de Dados</title>
+    <link rel="icon" type="image/png" href="frontend/img/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -84,7 +85,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="historico.html"
+                    <a href="frontend/historico.html"
                         style="display:flex;align-items:center;gap:14px;padding:14px 22px;color:#333;text-decoration:none;font-size:15px;font-weight:500;border-left:3px solid transparent;">
                         <i data-lucide="history" width="20" height="20"></i>
                         <span>Histórico</span>
@@ -263,6 +264,68 @@
             </div>
         </div>
 
+
+        <!-- Modal de Pré-visualização de Imagem -->
+        <div class="modal-overlay" id="previewModal">
+            <div class="confirm-box" style="width: min(92%, 400px); padding: 0; overflow: hidden;">
+                <div style="position: relative; width: 100%; aspect-ratio: 1/1; background: #eee; display: flex; align-items: center; justify-content: center;">
+                    <!-- Spinner de Carregamento -->
+                    <div id="previewLoader" style="position: absolute; display: none; flex-direction: column; align-items: center; gap: 10px;">
+                        <div class="spinner"></div>
+                        <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Carregando...</span>
+                    </div>
+                    
+                    <img id="previewImage" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    <div id="previewFallback" style="display: none; flex-direction: column; align-items: center; gap: 15px; padding: 40px; text-align: center;">
+                        <div id="fallbackIcon" style="width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white;">
+                            <i data-lucide="package" width="40" height="40"></i>
+                        </div>
+                        <div>
+                            <h4 id="fallbackTitle" style="margin: 0; font-size: 18px; color: var(--text-dark);">Código Detectado</h4>
+                            <p id="fallbackCode" style="margin: 5px 0 0; font-size: 14px; color: var(--text-muted); font-family: monospace; word-break: break-all;"></p>
+                        </div>
+                    </div>
+                    <button class="btn-close-modal" id="btnClosePreview" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <i data-lucide="x" width="20" height="20"></i>
+                    </button>
+                </div>
+                <div style="padding: 20px; text-align: center;">
+                    <button class="btn btn-primary" id="btnContinuePreview" style="border-radius: 14px;">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmação de Envio -->
+        <div class="modal-overlay" id="sendConfirmModal">
+            <div class="confirm-box" style="width: min(95%, 500px); max-height: 90vh; display: flex; flex-direction: column;">
+                <div style="padding: 25px 25px 15px; text-align: center;">
+                    <h3 style="margin-bottom: 10px; color: var(--text-dark);">Confirmar Envio</h3>
+                    <p style="font-size: 16px; color: var(--text-muted);">
+                        Deseja enviar os itens coletados para a filial <br>
+                        <strong id="confirmBranchName" style="color: var(--fachini-red); font-size: 18px;">---</strong>?
+                    </p>
+                </div>
+                
+                <div style="padding: 0 20px; flex-grow: 1; overflow-y: auto; margin-bottom: 20px;">
+                    <table class="confirm-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th style="text-align: right;">Qtd</th>
+                            </tr>
+                        </thead>
+                        <tbody id="confirmItemsList">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-controls" style="padding: 0 20px 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <button class="btn btn-secondary" id="btnCancelSendConfirm" style="padding: 14px;">Cancelar</button>
+                    <button class="btn btn-primary" id="btnFinalConfirmSend" style="padding: 14px;">Confirmar e Enviar</button>
+                </div>
+            </div>
+        </div>
 
         <script src="frontend/js/app.js?v=2"></script>
 

@@ -1,6 +1,23 @@
-const API_BASE_URL = window.location.pathname.includes('/frontend/')
-    ? window.location.origin + window.location.pathname.split('/frontend/')[0] + '/backend/public/index.php'
-    : window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/') + '/backend/public/index.php';
+const getApiBaseUrl = () => {
+    const url = new URL(window.location.href);
+    let path = url.pathname;
+    
+    // Remove o nome do arquivo se presente (ex: index.html ou historico.html)
+    if (path.includes('.html')) {
+        path = path.substring(0, path.lastIndexOf('/'));
+    }
+    
+    // Se estiver dentro da pasta frontend, sobe um nível para achar a raiz do projeto
+    if (path.endsWith('/frontend')) {
+        path = path.substring(0, path.lastIndexOf('/frontend'));
+    }
+    
+    // Remove barra duplicada se o path for apenas "/"
+    const basePath = path === '/' ? '' : path.replace(/\/$/, '');
+    
+    return url.origin + basePath + '/backend/public/index.php';
+};
+const API_BASE_URL = getApiBaseUrl();
 
 // Inicializa ícones
 lucide.createIcons();
@@ -92,7 +109,7 @@ function renderList(items) {
                 : '';
             li.innerHTML = `
                 <div class="item-info">
-                    <span class="item-code">${item.code} ${scanBadge}</span>
+                    <span class="item-code" onclick="openPreview('${item.code}')" title="Clique para ver detalhes">${item.code} ${scanBadge}</span>
                     <span class="item-time"><i data-lucide="clock" width="10" height="10" style="display:inline; margin-right:3px;"></i>${formatDateTime(item.timestamp)}</span>
                 </div>
                 <button class="btn-delete-item" onclick="deleteItemById(${item.id})" title="Remover item">
@@ -105,6 +122,126 @@ function renderList(items) {
         // Recria os ícones inseridos dinamicamente
         lucide.createIcons();
     }
+}
+
+// --- Lógica de Pré-visualização de Imagem ---
+const previewModal = document.getElementById('previewModal');
+const previewImage = document.getElementById('previewImage');
+const previewLoader = document.getElementById('previewLoader');
+const previewFallback = document.getElementById('previewFallback');
+const fallbackTitle = document.getElementById('fallbackTitle');
+const fallbackCode = document.getElementById('fallbackCode');
+const fallbackIcon = document.getElementById('fallbackIcon');
+const btnClosePreview = document.getElementById('btnClosePreview');
+const btnContinuePreview = document.getElementById('btnContinuePreview');
+
+function isImageUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    return (
+        cleanUrl.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i) !== null ||
+        url.startsWith('data:image/') ||
+        url.includes('images.unsplash.com') ||
+        url.includes('img.freepik.com')
+    );
+}
+
+function generateColorCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return "00000".substring(0, 6 - c.length) + c;
+}
+
+window.openPreview = function (code) {
+    if (!previewModal) return;
+
+    previewModal.style.display = 'flex';
+    previewModal.classList.add('show');
+    
+    // Reset Modal State
+    previewImage.style.display = 'none';
+    previewFallback.style.display = 'none';
+    previewLoader.style.display = 'none'; // Por padrão, não mostra loader para texto
+    
+    let imageUrl = '';
+
+    if (isImageUrl(code)) {
+        // É uma imagem direta
+        imageUrl = code;
+    } else if (code.startsWith('http')) {
+        // É um site, usar mshots para print da tela
+        imageUrl = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(code)}?w=800`;
+    }
+
+    if (imageUrl) {
+        // Carregar a imagem com loader
+        previewLoader.style.display = 'flex';
+        const img = new Image();
+        img.src = imageUrl;
+        
+        img.onload = () => {
+            previewImage.src = imageUrl;
+            previewImage.style.display = 'block';
+            previewLoader.style.display = 'none';
+            previewFallback.style.display = 'none';
+        };
+
+        img.onerror = () => {
+            showFallback(code);
+        };
+    } else {
+        // É texto puro: mostra imediatamente
+        showFallback(code);
+    }
+};
+
+function showFallback(code) {
+    previewLoader.style.display = 'none';
+    previewImage.style.display = 'none';
+    previewFallback.style.display = 'flex';
+    
+    fallbackCode.textContent = code;
+    const color = generateColorCode(code);
+    fallbackIcon.style.backgroundColor = `#${color}`;
+    
+    if (code.startsWith('http')) {
+        fallbackTitle.textContent = "Link Detectado";
+        fallbackIcon.innerHTML = `<i data-lucide="external-link" width="40" height="40"></i>`;
+    } else {
+        fallbackTitle.textContent = "Conteúdo de Texto";
+        fallbackIcon.innerHTML = `<i data-lucide="file-text" width="40" height="40"></i>`;
+    }
+    lucide.createIcons();
+}
+
+function closePreview() {
+    if (previewModal) {
+        previewModal.classList.remove('show');
+        setTimeout(() => {
+            previewModal.style.display = 'none';
+            // Retorna o foco apenas se for estritamente necessário (Removido para evitar teclado no mobile)
+            // if (input) input.focus();
+        }, 300);
+    }
+}
+
+// Fechar modal com a tecla Enter
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && previewModal && previewModal.style.display === 'flex') {
+        e.preventDefault();
+        closePreview();
+    }
+});
+
+if (btnClosePreview) btnClosePreview.addEventListener('click', closePreview);
+if (btnContinuePreview) btnContinuePreview.addEventListener('click', closePreview);
+if (previewModal) {
+    previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) closePreview();
+    });
 }
 
 // Função global para deletar item por ID
@@ -170,6 +307,11 @@ async function addCode(code) {
             showToast('Código registrado!');
             if (input) input.value = '';
             loadItems();
+            
+            // Abertura automática se for imagem
+            if (isImageUrl(code) || code.startsWith('http')) {
+                openPreview(code);
+            }
         } else {
             showToast(result.error || 'Erro ao registrar', 'error');
             if (input) input.value = '';
@@ -379,31 +521,31 @@ if (btnConfirmClear) {
 // ABAIXO VOCÊ PODE ALTERAR O E-MAIL DE CADA FILIAL. 
 // Certifique-se de manter o formato { name: '...', location: '...', state: '...', email: '...' }
 const branches = [
-    { name: 'Votuporanga – SP (Sede)', location: 'Votuporanga, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José do Rio Preto – SP', location: 'São José do Rio Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Mirassol – SP', location: 'Mirassol, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cosmorama – SP', location: 'Cosmorama, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Coroados – SP', location: 'Coroados, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Ribeirão Preto – SP', location: 'Ribeirão Preto, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Guararema – SP', location: 'Guararema, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Guarulhos – SP', location: 'Guarulhos, SP', state: 'SP', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Anápolis – GO', location: 'Anápolis, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Rio Verde – GO', location: 'Rio Verde, GO', state: 'GO', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cuiabá – MT', location: 'Cuiabá, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Rondonópolis – MT', location: 'Rondonópolis, MT', state: 'MT', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Campo Grande – MS', location: 'Campo Grande, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Ribas do Rio Pardo – MS', location: 'Ribas do Rio Pardo, MS', state: 'MS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Chapecó – SC', location: 'Chapecó, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Penha – SC', location: 'Penha, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Içara – SC', location: 'Içara, SC', state: 'SC', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José dos Pinhais – PR', location: 'São José dos Pinhais, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cambé – PR', location: 'Cambé, PR', state: 'PR', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Nova Santa Rita – RS', location: 'Nova Santa Rita, RS', state: 'RS', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Imperatriz – MA', location: 'Imperatriz, MA', state: 'MA', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'São José de Mipibu – RN', location: 'São José de Mipibu, RN', state: 'RN', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Cabo de Santo Agostinho – PE', location: 'Cabo de Santo Agostinho, PE', state: 'PE', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Luís Eduardo Magalhães – BA', location: 'Luís Eduardo Magalhães, BA', state: 'BA', email: 'arthur.t.carvalho@aluno.senai.br' },
-    { name: 'Palmas – TO', location: 'Palmas, TO', state: 'TO', email: 'arthur.t.carvalho@aluno.senai.br' }
+    { name: 'Votuporanga – SP (Sede)', location: 'Votuporanga, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'São José do Rio Preto – SP', location: 'São José do Rio Preto, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Mirassol – SP', location: 'Mirassol, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Cosmorama – SP', location: 'Cosmorama, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Coroados – SP', location: 'Coroados, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Ribeirão Preto – SP', location: 'Ribeirão Preto, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Guararema – SP', location: 'Guararema, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Guarulhos – SP', location: 'Guarulhos, SP', state: 'SP', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Anápolis – GO', location: 'Anápolis, GO', state: 'GO', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Rio Verde – GO', location: 'Rio Verde, GO', state: 'GO', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Cuiabá – MT', location: 'Cuiabá, MT', state: 'MT', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Rondonópolis – MT', location: 'Rondonópolis, MT', state: 'MT', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Campo Grande – MS', location: 'Campo Grande, MS', state: 'MS', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Ribas do Rio Pardo – MS', location: 'Ribas do Rio Pardo, MS', state: 'MS', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Chapecó – SC', location: 'Chapecó, SC', state: 'SC', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Penha – SC', location: 'Penha, SC', state: 'SC', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Içara – SC', location: 'Içara, SC', state: 'SC', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'São José dos Pinhais – PR', location: 'São José dos Pinhais, PR', state: 'PR', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Cambé – PR', location: 'Cambé, PR', state: 'PR', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Nova Santa Rita – RS', location: 'Nova Santa Rita, RS', state: 'RS', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Imperatriz – MA', location: 'Imperatriz, MA', state: 'MA', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'São José de Mipibu – RN', location: 'São José de Mipibu, RN', state: 'RN', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Cabo de Santo Agostinho – PE', location: 'Cabo de Santo Agostinho, PE', state: 'PE', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Luís Eduardo Magalhães – BA', location: 'Luís Eduardo Magalhães, BA', state: 'BA', email: 'arthur.tadeu.carvalhoo@gmail.com' },
+    { name: 'Palmas – TO', location: 'Palmas, TO', state: 'TO', email: 'arthur.tadeu.carvalhoo@gmail.com' }
 ];
 
 // Elementos dos Modais de Destino
@@ -511,8 +653,85 @@ if (branchSearch) {
 }
 
 // --- Lógica Final de Envio com Animação ---
+// Elementos do Modal de Confirmação de Envio (Novo)
+const sendConfirmModal = document.getElementById('sendConfirmModal');
+const btnCancelSendModal = document.getElementById('btnCancelSendConfirm');
+const btnFinalConfirmSend = document.getElementById('btnFinalConfirmSend');
+const confirmBranchName = document.getElementById('confirmBranchName');
+const confirmItemsList = document.getElementById('confirmItemsList');
+
+// Função para abrir confirmação de envio
+async function openSendConfirmation() {
+    try {
+        const itemsResponse = await fetch(`${API_BASE_URL}/items`);
+        const items = await itemsResponse.json();
+        
+        if (items.length === 0) {
+            showToast('Nenhum item para enviar!', 'error');
+            return;
+        }
+
+        const destName = destinationInput ? destinationInput.value : 'Não informada';
+        if (confirmBranchName) confirmBranchName.innerHTML = `${destName}`;
+        
+        if (confirmItemsList) {
+            confirmItemsList.innerHTML = items.map(item => {
+                const isImg = isImageUrl(item.code) || item.code.startsWith('http');
+                const contentDisplay = isImg 
+                    ? `<button class="btn-expand-img" onclick="openPreview('${item.code}')">
+                        <i data-lucide="maximize-2" width="12" height="12"></i> Expandir Imagem
+                       </button>`
+                    : `<span class="confirm-item-text">${item.code}</span>`;
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <strong style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Conteúdo:</strong>
+                                <div style="display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%;">
+                                    ${contentDisplay}
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align: right; vertical-align: middle; padding-top: 20px;">
+                            <span class="scan-count-badge" style="font-size: 14px; padding: 6px 12px;">${item.scan_count}x</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        if (sendConfirmModal) {
+            sendConfirmModal.style.display = 'flex';
+            setTimeout(() => sendConfirmModal.classList.add('show'), 10);
+        }
+    } catch (error) {
+        console.error('Erro ao preparar confirmação:', error);
+    }
+}
+
+// Evento: Abrir o novo modal de confirmação no lugar do envio direto
 if (btnConfirmSend) {
-    btnConfirmSend.addEventListener('click', async () => {
+    btnConfirmSend.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSendConfirmation();
+    });
+}
+
+// Evento: Cancelar no novo modal
+if (btnCancelSendModal) {
+    btnCancelSendModal.addEventListener('click', () => {
+        sendConfirmModal.classList.remove('show');
+        setTimeout(() => sendConfirmModal.style.display = 'none', 300);
+    });
+}
+
+// Evento: Confirmação FINAL dentro do novo modal
+if (btnFinalConfirmSend) {
+    btnFinalConfirmSend.addEventListener('click', async () => {
+        sendConfirmModal.classList.remove('show');
+        setTimeout(() => sendConfirmModal.style.display = 'none', 300);
         if (destinationModal) destinationModal.style.display = 'none';
 
         // Iniciar Animação do Caminhão
@@ -561,6 +780,14 @@ if (btnConfirmSend) {
 
                 if (response.ok) {
                     showToast('Relatório enviado com sucesso!');
+                    
+                    // Limpar logs do servidor após enviar com sucesso
+                    try {
+                        await fetch(`${API_BASE_URL}/items`, { method: 'DELETE' });
+                    } catch (clearErr) {
+                        console.error('Erro ao limpar itens:', clearErr);
+                    }
+                    
                     loadItems();
                     if (destinationInput) destinationInput.value = '';
                     if (btnConfirmSend) {
